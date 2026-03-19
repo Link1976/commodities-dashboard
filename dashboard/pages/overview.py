@@ -11,11 +11,12 @@ from db.queries import (
 from config import RATIOS
 
 # ── Category display order ────────────────────────────────────────────────────
-CATEGORY_ORDER  = ["precious", "pgm", "energy", "industrial", "currency"]
+CATEGORY_ORDER  = ["precious", "pgm", "energy", "carbon", "industrial", "currency"]
 CATEGORY_LABELS = {
     "precious":   "Metales Preciosos",
     "pgm":        "PGMs",
     "energy":     "Energía",
+    "carbon":     "Carbón ⚠️ proxy",
     "industrial": "Metales Industriales",
     "currency":   "Divisas Productoras",
 }

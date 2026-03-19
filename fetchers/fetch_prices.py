@@ -27,10 +27,12 @@ log = logging.getLogger(__name__)
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
-def next_active_contracts(root: str, valid_months: list, n: int = 6) -> list[str]:
+def next_active_contracts(root: str, exchange: str, valid_months: list,
+                          n: int = 6) -> list[str]:
     """
-    Build the next N dated futures tickers for a given root symbol.
-    E.g. root='GC', valid_months=[2,4,6,8,10,12] → ['GCJ25', 'GCM25', ...]
+    Build the next N dated futures tickers in Yahoo Finance format.
+    E.g. root='GC', exchange='CMX', valid_months=[2,4,6,8,10,12]
+    → ['GCJ26.CMX', 'GCM26.CMX', ...]
     """
     tickers = []
     today = date.today()
@@ -44,7 +46,7 @@ def next_active_contracts(root: str, valid_months: list, n: int = 6) -> list[str
         if month in valid_months:
             code = MONTH_CODES[month]
             yy = str(year)[-2:]
-            tickers.append(f"{root}{code}{yy}")
+            tickers.append(f"{root}{code}{yy}.{exchange}")
         month += 1
         checked += 1
 
@@ -178,7 +180,7 @@ def fetch_futures_curves():
     total = 0
 
     for commodity, cfg in FUTURES_CURVE.items():
-        contracts = next_active_contracts(cfg["root"], cfg["months"], n=6)
+        contracts = next_active_contracts(cfg["root"], cfg["exchange"], cfg["months"], n=6)
         log.info(f"  {commodity}: fetching {contracts}")
 
         try:

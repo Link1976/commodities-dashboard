@@ -1,0 +1,67 @@
+"""layout.py — Top-level tab structure and refresh interval."""
+from dash import dcc, html, Input, Output, callback
+import dash_bootstrap_components as dbc
+
+from dashboard.pages.overview       import layout as overview_layout
+from dashboard.pages.term_structure import layout as term_structure_layout
+from dashboard.pages.history        import layout as history_layout
+from dashboard.pages.cot            import layout as cot_layout
+
+
+def build_layout():
+    return dbc.Container(
+        fluid=True,
+        style={"backgroundColor": "#1a1a2e", "minHeight": "100vh"},
+        children=[
+            # ── Header ────────────────────────────────────────────────────────
+            dbc.Row(
+                dbc.Col(
+                    html.H2(
+                        "Commodities Dashboard",
+                        style={
+                            "color": "#e0e0e0",
+                            "padding": "18px 0 8px 0",
+                            "fontWeight": "600",
+                            "letterSpacing": "1px",
+                        }
+                    )
+                )
+            ),
+
+            # ── Tabs ──────────────────────────────────────────────────────────
+            dbc.Tabs(
+                id="main-tabs",
+                active_tab="tab-overview",
+                children=[
+                    dbc.Tab(label="Overview",       tab_id="tab-overview"),
+                    dbc.Tab(label="Term Structure", tab_id="tab-term-structure"),
+                    dbc.Tab(label="History",        tab_id="tab-history"),
+                    dbc.Tab(label="COT",            tab_id="tab-cot"),
+                ],
+                style={"marginBottom": "16px"},
+            ),
+
+            # ── Tab content ───────────────────────────────────────────────────
+            html.Div(id="tab-content"),
+
+            # ── Auto-refresh every 5 minutes ──────────────────────────────────
+            dcc.Interval(
+                id="auto-refresh",
+                interval=5 * 60 * 1000,   # ms
+                n_intervals=0,
+            ),
+        ],
+    )
+
+
+@callback(Output("tab-content", "children"), Input("main-tabs", "active_tab"))
+def render_tab(tab):
+    if tab == "tab-overview":
+        return overview_layout
+    if tab == "tab-term-structure":
+        return term_structure_layout
+    if tab == "tab-history":
+        return history_layout
+    if tab == "tab-cot":
+        return cot_layout
+    return html.P("Tab not found")

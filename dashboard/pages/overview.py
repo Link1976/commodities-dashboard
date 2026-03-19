@@ -64,8 +64,9 @@ def _ratio_semaphore(value, alert_high, alert_low):
 # ── Layout ────────────────────────────────────────────────────────────────────
 layout = html.Div([
     dbc.Row([
-        dbc.Col(html.Div(id="prices-table"), width=8),
-        dbc.Col(html.Div(id="ratio-cards"),  width=4),
+        dbc.Col(html.Div(id="prices-table"), xs=12, lg=8,
+                style={"marginBottom": "16px"}),
+        dbc.Col(html.Div(id="ratio-cards"),  xs=12, lg=4),
     ]),
 ], style={"padding": "8px"})
 

@@ -1,29 +1,47 @@
 """Tab 2 — Futures term structure (contango / backwardation)."""
+import re
 from dash import html, dcc, Input, Output, callback
 import dash_bootstrap_components as dbc
 import plotly.graph_objects as go
 
 from db.queries import get_futures_curve, get_curve_dates
-from config import FUTURES_CURVE
+from config import FUTURES_CURVE, MONTH_CODES
 
 COMMODITY_OPTIONS = [
     {"label": cfg["name"], "value": key}
     for key, cfg in FUTURES_CURVE.items()
 ]
 
+# Reverse month code lookup: letter → month name
+_CODE_TO_MONTH = {v: k for k, v in MONTH_CODES.items()}
+_MONTH_NAMES = {
+    1: "Ene", 2: "Feb", 3: "Mar", 4: "Abr", 5: "May", 6: "Jun",
+    7: "Jul", 8: "Ago", 9: "Sep", 10: "Oct", 11: "Nov", 12: "Dic",
+}
+
 _INFO = """
 **Curva de futuros (Term Structure)**
+Cada punto es un contrato con vencimiento distinto. Pasa el cursor para ver el precio exacto.
 
-Muestra los precios de los contratos M1 (mes más próximo) a M6 (6 meses vista).
-
-- 📈 **Contango** (curva ascendente): el futuro cuesta más que el spot.
-  Normal cuando hay costes de almacenamiento. Indica oferta abundante.
-- 📉 **Backwardation** (curva descendente): el futuro cuesta menos que el spot.
-  Señal de escasez física — el mercado paga prima por entrega inmediata.
-  En metales preciosos es raro y muy alcista.
+- 📈 **Contango** (curva ascendente): futuro > spot → oferta abundante, coste de almacenamiento.
+- 📉 **Backwardation** (curva descendente): futuro < spot → escasez física, prima por entrega inmediata.
 """
 
+
+def ticker_to_label(ticker: str) -> str:
+    """CLK26.NYM → 'May 26'"""
+    m = re.match(r"[A-Z]+([A-Z])(\d{2})", ticker)
+    if not m:
+        return ticker
+    code, yy = m.group(1), m.group(2)
+    month_num = _CODE_TO_MONTH.get(code)
+    if month_num is None:
+        return ticker
+    return f"{_MONTH_NAMES[month_num]} {yy}"
+
+
 layout = html.Div([
+    # Info panel
     dbc.Row(dbc.Col(
         dbc.Alert(
             dcc.Markdown(_INFO, style={"fontSize": "12px", "marginBottom": "0"}),
@@ -32,6 +50,8 @@ layout = html.Div([
                    "padding": "10px 16px", "marginBottom": "12px"},
         )
     )),
+
+    # Controls — responsive
     dbc.Row([
         dbc.Col(
             dcc.Dropdown(
@@ -41,21 +61,32 @@ layout = html.Div([
                 clearable=False,
                 style={"backgroundColor": "#16213e", "color": "#000"},
             ),
-            width=4,
+            xs=12, md=4, style={"marginBottom": "8px"},
         ),
         dbc.Col(
-            dcc.DatePickerSingle(
-                id="curve-date",
-                display_format="YYYY-MM-DD",
-                style={"color": "#000"},
-            ),
-            width=3,
+            html.Div([
+                html.Label("Snapshot histórico:",
+                           style={"color": "#a0a0b0", "fontSize": "12px",
+                                  "marginBottom": "4px", "display": "block"}),
+                dcc.Dropdown(
+                    id="curve-date-dropdown",
+                    placeholder="Hoy (último disponible)",
+                    clearable=True,
+                    style={"backgroundColor": "#16213e", "color": "#000"},
+                ),
+            ]),
+            xs=12, md=4, style={"marginBottom": "8px"},
         ),
-    ], style={"marginBottom": "16px"}),
+    ], style={"marginBottom": "8px"}),
 
+    # Chart + table — stack on mobile
     dbc.Row([
-        dbc.Col(dcc.Graph(id="curve-chart"), width=8),
-        dbc.Col(html.Div(id="curve-table"), width=4),
+        dbc.Col(dcc.Graph(id="curve-chart",
+                          config={"displayModeBar": False}),
+                xs=12, md=8),
+        dbc.Col(html.Div(id="curve-table",
+                         style={"overflowX": "auto"}),
+                xs=12, md=4),
     ]),
 ], style={"padding": "8px"})
 
@@ -66,41 +97,49 @@ def build_curve_chart(commodity: str, on_date: str = None):
     if not data:
         fig = go.Figure()
         fig.update_layout(
-            title="No futures curve data available",
+            title="Sin datos de curva — ejecuta fetch_prices primero",
             **_dark_layout(),
         )
         return fig
 
-    contracts = [d["contract"] for d in data]
-    prices    = [d["price"] for d in data]
-    tickers   = [d["ticker"] for d in data]
+    labels = [ticker_to_label(d["ticker"]) for d in data]
+    prices = [d["price"] for d in data]
+    tickers = [d["ticker"] for d in data]
 
-    # Determine contango / backwardation
-    slope_color = "#e74c3c" if prices[-1] > prices[0] else "#2ecc71"
-    label = "Contango ▲" if prices[-1] > prices[0] else "Backwardation ▼"
+    is_backwardation = prices[-1] < prices[0]
+    slope_color = "#2ecc71" if is_backwardation else "#e74c3c"
+    label = "Backwardation ▼ (escasez)" if is_backwardation else "Contango ▲ (oferta abundante)"
 
     fig = go.Figure()
     fig.add_trace(go.Scatter(
-        x=contracts,
+        x=labels,
         y=prices,
-        mode="lines+markers+text",
-        text=[f"${p:,.1f}" for p in prices],
-        textposition="top center",
-        line={"color": slope_color, "width": 2.5},
-        marker={"size": 9, "color": slope_color},
-        customdata=tickers,
+        mode="lines+markers",
+        line={"color": slope_color, "width": 3},
+        marker={"size": 10, "color": slope_color,
+                "line": {"color": "#fff", "width": 1}},
+        customdata=[[t, p] for t, p in zip(tickers, prices)],
         hovertemplate=(
             "<b>%{x}</b><br>"
-            "Price: $%{y:,.2f}<br>"
-            "Ticker: %{customdata}<extra></extra>"
+            "Precio: $%{y:,.2f}<br>"
+            "Ticker: %{customdata[0]}<extra></extra>"
         ),
     ))
 
+    # Horizontal reference line at M1 price
+    fig.add_hline(
+        y=prices[0], line_dash="dot",
+        line_color="#888", line_width=1,
+        annotation_text=f"M1 ${prices[0]:,.1f}",
+        annotation_font_color="#888",
+    )
+
+    snap = f" | Snapshot: {on_date}" if on_date else " | Último disponible"
     name = FUTURES_CURVE.get(commodity, {}).get("name", commodity)
     fig.update_layout(
-        title=f"{name} — Term Structure  ({label})",
-        xaxis_title="Contract",
-        yaxis_title="Price (USD)",
+        title=f"{name} — {label}{snap}",
+        xaxis_title="Vencimiento",
+        yaxis_title="Precio (USD)",
         **_dark_layout(),
     )
     return fig
@@ -109,29 +148,36 @@ def build_curve_chart(commodity: str, on_date: str = None):
 def build_curve_table(commodity: str, on_date: str = None):
     data = get_futures_curve(commodity, on_date)
     if not data:
-        return html.P("No data", style={"color": "#888"})
+        return html.P("Sin datos", style={"color": "#888", "fontSize": "13px"})
 
-    m1_price = data[0]["price"] if data else 1
+    base_price = data[0]["price"]
 
     header = html.Tr([
-        html.Th(c, style={"color": "#a0a0b0", "fontSize": "12px", "padding": "6px"})
-        for c in ["Contract", "Ticker", "Price", "vs M1"]
+        html.Th(c, style={"color": "#a0a0b0", "fontSize": "11px",
+                           "padding": "6px 8px", "whiteSpace": "nowrap"})
+        for c in ["Venc.", "Precio", "vs 1er contrato"]
     ])
-    body_rows = []
+    rows = []
     for d in data:
-        diff = d["price"] - m1_price
+        label = ticker_to_label(d["ticker"])
+        diff = d["price"] - base_price
         diff_str = f"{diff:+.2f}" if diff != 0 else "—"
         diff_color = "#e74c3c" if diff > 0 else "#2ecc71" if diff < 0 else "#888"
-        body_rows.append(html.Tr([
-            html.Td(d["contract"], style={"color": "#e0e0e0", "padding": "6px"}),
-            html.Td(d["ticker"],   style={"color": "#a0a0b0", "padding": "6px", "fontSize": "11px"}),
-            html.Td(f"${d['price']:,.2f}", style={"color": "#e0e0e0", "padding": "6px"}),
-            html.Td(diff_str,      style={"color": diff_color, "padding": "6px", "fontWeight": "600"}),
+        rows.append(html.Tr([
+            html.Td(label,
+                    style={"color": "#e0e0e0", "padding": "6px 8px",
+                           "fontWeight": "600", "fontSize": "13px"}),
+            html.Td(f"${d['price']:,.2f}",
+                    style={"color": "#e0e0e0", "padding": "6px 8px", "fontSize": "13px"}),
+            html.Td(diff_str,
+                    style={"color": diff_color, "padding": "6px 8px",
+                           "fontWeight": "700", "fontSize": "13px"}),
         ]))
 
     return html.Table(
-        [html.Thead(header), html.Tbody(body_rows)],
-        style={"width": "100%", "borderCollapse": "collapse"},
+        [html.Thead(header), html.Tbody(rows)],
+        style={"width": "100%", "borderCollapse": "collapse",
+               "backgroundColor": "#16213e", "borderRadius": "6px"},
     )
 
 
@@ -142,15 +188,27 @@ def _dark_layout():
         font={"color": "#e0e0e0"},
         xaxis={"gridcolor": "#2a2a4a", "zerolinecolor": "#2a2a4a"},
         yaxis={"gridcolor": "#2a2a4a", "zerolinecolor": "#2a2a4a"},
-        margin={"t": 50, "b": 40, "l": 60, "r": 20},
+        margin={"t": 60, "b": 40, "l": 60, "r": 20},
     )
+
+
+@callback(
+    Output("curve-date-dropdown", "options"),
+    Output("curve-date-dropdown", "value"),
+    Input("curve-commodity", "value"),
+    Input("auto-refresh", "n_intervals"),
+)
+def update_date_options(commodity, _):
+    dates = get_curve_dates(commodity)
+    options = [{"label": d, "value": d} for d in dates]
+    return options, None   # None = latest
 
 
 @callback(
     Output("curve-chart", "figure"),
     Output("curve-table", "children"),
     Input("curve-commodity", "value"),
-    Input("curve-date", "date"),
+    Input("curve-date-dropdown", "value"),
     Input("auto-refresh", "n_intervals"),
 )
 def update_curve(commodity, on_date, _):

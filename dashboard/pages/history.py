@@ -44,7 +44,7 @@ layout = html.Div([
                 clearable=False,
                 style={"backgroundColor": "#16213e", "color": "#000"},
             ),
-            width=4,
+            xs=12, md=4, style={"marginBottom": "8px"},
         ),
         dbc.Col(
             dcc.RadioItems(
@@ -52,9 +52,9 @@ layout = html.Div([
                 options=PERIOD_OPTIONS,
                 value=365,
                 inline=True,
-                labelStyle={"marginRight": "16px", "color": "#e0e0e0"},
+                labelStyle={"marginRight": "12px", "color": "#e0e0e0", "fontSize": "13px"},
             ),
-            width=5,
+            xs=12, md=5, style={"marginBottom": "8px"},
         ),
         dbc.Col(
             dcc.Checklist(
@@ -66,13 +66,17 @@ layout = html.Div([
                 ],
                 value=[],
                 inline=True,
-                labelStyle={"marginRight": "12px", "color": "#e0e0e0", "fontSize": "13px"},
+                labelStyle={"marginRight": "10px", "color": "#e0e0e0", "fontSize": "13px"},
             ),
-            width=3,
+            xs=12, md=3, style={"marginBottom": "8px"},
         ),
-    ], style={"marginBottom": "16px"}),
+    ], style={"marginBottom": "8px"}),
 
-    dbc.Row(dbc.Col(dcc.Graph(id="hist-chart", style={"height": "500px"}))),
+    dbc.Row(dbc.Col(dcc.Graph(
+        id="hist-chart",
+        style={"height": "460px"},
+        config={"displayModeBar": False},
+    ))),
 ], style={"padding": "8px"})
 
 

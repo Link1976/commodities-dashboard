@@ -12,7 +12,13 @@ COT_OPTIONS = [
     for slug in COT_COMMODITIES.values()
 ]
 
-# Map slug → spot ticker for price overlay
+PERIOD_OPTIONS = [
+    {"label": "6M",  "value": 26},
+    {"label": "1A",  "value": 52},
+    {"label": "2A",  "value": 104},
+    {"label": "3A",  "value": 156},
+]
+
 SLUG_TO_TICKER = {
     "gold":      "GC=F",
     "silver":    "SI=F",
@@ -25,15 +31,11 @@ SLUG_TO_TICKER = {
 
 _INFO = """
 **COT — Commitment of Traders (CFTC)**
+Informe semanal del regulador de EEUU. Posicionamiento neto en contratos de futuros.
 
-Informe semanal del regulador de futuros de EEUU. Muestra el posicionamiento neto de:
-
-- 🔵 **Non-Commercials (especuladores)**: fondos, hedge funds. Siguen tendencias.
-  Posición neta alta = mercado muy largo → posible techo. Baja = posible suelo.
-- 🟠 **Commercials (hedgers)**: productores y consumidores reales. Suelen ir a contracorriente.
-- **Índice COT**: percentil de la posición especuladora vs los últimos 3 años.
-  Por encima de 70% → especuladores muy largos (señal de cautela).
-  Por debajo de 30% → especuladores muy cortos (señal contraria alcista).
+- 🔵 **Non-Commercials (especuladores)**: fondos y hedge funds — siguen tendencias.
+  Posición extrema larga (índice >70%) → posible techo. Extrema corta (<30%) → señal contraria alcista.
+- 🟠 **Commercials (hedgers)**: productores y consumidores reales — suelen ir a contracorriente.
 """
 
 layout = html.Div([
@@ -45,6 +47,8 @@ layout = html.Div([
                    "padding": "10px 16px", "marginBottom": "12px"},
         )
     )),
+
+    # Controls — responsive
     dbc.Row([
         dbc.Col(
             dcc.Dropdown(
@@ -54,36 +58,61 @@ layout = html.Div([
                 clearable=False,
                 style={"backgroundColor": "#16213e", "color": "#000"},
             ),
-            width=4,
+            xs=12, md=4, style={"marginBottom": "8px"},
+        ),
+        dbc.Col(
+            html.Div([
+                html.Label("Período:",
+                           style={"color": "#a0a0b0", "fontSize": "12px",
+                                  "marginRight": "8px"}),
+                dcc.RadioItems(
+                    id="cot-period",
+                    options=PERIOD_OPTIONS,
+                    value=104,
+                    inline=True,
+                    labelStyle={"marginRight": "14px", "color": "#e0e0e0",
+                                "fontSize": "13px"},
+                ),
+            ], style={"display": "flex", "alignItems": "center"}),
+            xs=12, md=6, style={"marginBottom": "8px"},
         ),
         dbc.Col(
             html.Div(id="cot-percentile-badge"),
-            width=4,
+            xs=12, md=2,
             style={"display": "flex", "alignItems": "center"},
         ),
-    ], style={"marginBottom": "16px"}),
+    ], style={"marginBottom": "8px"}),
 
-    dbc.Row(dbc.Col(dcc.Graph(id="cot-chart", style={"height": "520px"}))),
+    dbc.Row(dbc.Col(
+        dcc.Graph(id="cot-chart",
+                  style={"height": "520px"},
+                  config={"displayModeBar": False}),
+    )),
 ], style={"padding": "8px"})
 
 
-def build_cot_chart(slug: str):
-    rows = get_cot_series(slug, weeks=156)
+def build_cot_chart(slug: str, weeks: int = 104):
+    rows = get_cot_series(slug, weeks=weeks)
 
     if not rows:
         fig = go.Figure()
-        fig.update_layout(title="No COT data available", **_dark_layout())
+        fig.update_layout(title="Sin datos COT — ejecuta fetch_cot primero",
+                          **_dark_layout())
         return fig
 
-    dates      = [r["report_date"] for r in rows]
-    noncomm_net = [r["noncomm_net"] or 0  for r in rows]
-    comm_net    = [r["comm_net"]    or 0  for r in rows]
+    dates       = [r["report_date"]  for r in rows]
+    noncomm_net = [r["noncomm_net"] or 0 for r in rows]
+    comm_net    = [r["comm_net"]    or 0 for r in rows]
 
-    # Spot price overlay
+    # Spot price — limit to same date range as COT
     ticker = SLUG_TO_TICKER.get(slug)
     price_dates, price_vals = [], []
-    if ticker:
-        price_rows = get_price_series(ticker, days=365 * 3)
+    if ticker and dates:
+        # Use weeks * 7 days to match the COT period
+        price_rows = get_price_series(ticker, days=weeks * 7)
+        # Only keep dates within the COT range
+        if price_rows and dates:
+            price_rows = [r for r in price_rows if r["date"] >= dates[0]]
         price_dates = [r["date"]  for r in price_rows]
         price_vals  = [r["close"] for r in price_rows]
 
@@ -92,42 +121,42 @@ def build_cot_chart(slug: str):
         shared_xaxes=True,
         row_heights=[0.55, 0.45],
         vertical_spacing=0.04,
-        subplot_titles=["Net Positioning (contracts)", "Spot Price"],
+        subplot_titles=["Posición neta (contratos)", "Precio spot"],
     )
 
-    # Non-commercial net (speculators)
+    # Non-commercial bars
     nc_colors = ["#2ecc71" if v >= 0 else "#e74c3c" for v in noncomm_net]
     fig.add_trace(go.Bar(
         x=dates, y=noncomm_net,
         marker_color=nc_colors,
-        name="Non-Commercial (spec) net",
+        name="No-Comerciales (especuladores)",
         opacity=0.85,
+        hovertemplate="%{x}<br>%{y:,.0f} contratos<extra>Especuladores</extra>",
     ), row=1, col=1)
 
-    # Commercial net (hedgers) — faint line
     fig.add_trace(go.Scatter(
         x=dates, y=comm_net,
         mode="lines",
-        name="Commercial (hedger) net",
-        line={"color": "#e67e22", "width": 1.2, "dash": "dot"},
-        opacity=0.7,
+        name="Comerciales (hedgers)",
+        line={"color": "#e67e22", "width": 1.5, "dash": "dot"},
+        opacity=0.8,
+        hovertemplate="%{x}<br>%{y:,.0f} contratos<extra>Hedgers</extra>",
     ), row=1, col=1)
 
-    # Zero line
     fig.add_hline(y=0, line_color="#555", line_width=1, row=1, col=1)
 
-    # Spot price
     if price_dates:
         fig.add_trace(go.Scatter(
             x=price_dates, y=price_vals,
             mode="lines",
-            name="Spot price",
-            line={"color": "#3498db", "width": 1.8},
+            name="Precio spot",
+            line={"color": "#3498db", "width": 2},
+            hovertemplate="%{x}<br>$%{y:,.2f}<extra>Spot</extra>",
         ), row=2, col=1)
 
     name = slug.replace("_", " ").title()
     fig.update_layout(
-        title=f"{name} — COT Positioning (3 years)",
+        title=f"{name} — COT",
         barmode="relative",
         **_dark_layout(),
     )
@@ -138,19 +167,19 @@ def build_cot_chart(slug: str):
 def build_percentile_badge(slug: str):
     pct = get_cot_percentile(slug)
     if pct is None:
-        return html.Span("COT index: —", style={"color": "#888"})
+        return html.Span("—", style={"color": "#888"})
 
-    if pct >= 70:
-        color, label = "#2ecc71", "LONGS extremos"
-    elif pct <= 30:
-        color, label = "#e74c3c", "SHORTS extremos"
-    else:
-        color, label = "#f39c12", "Neutral"
+    color = "#2ecc71" if pct >= 70 else "#e74c3c" if pct <= 30 else "#f39c12"
+    label = "Largos ext." if pct >= 70 else "Cortos ext." if pct <= 30 else "Neutral"
 
     return html.Div([
-        html.Span("COT index: ", style={"color": "#a0a0b0", "fontSize": "13px"}),
-        html.Span(f"{pct:.0f}%  ", style={"color": color, "fontWeight": "700", "fontSize": "18px"}),
-        html.Span(label, style={"color": color, "fontSize": "13px"}),
+        html.Div(f"{pct:.0f}%",
+                 style={"color": color, "fontWeight": "700",
+                        "fontSize": "22px", "lineHeight": "1"}),
+        html.Div(label,
+                 style={"color": color, "fontSize": "11px"}),
+        html.Div("índice COT",
+                 style={"color": "#666", "fontSize": "10px"}),
     ])
 
 
@@ -161,7 +190,8 @@ def _dark_layout():
         font={"color": "#e0e0e0"},
         xaxis={"gridcolor": "#2a2a4a"},
         margin={"t": 60, "b": 40, "l": 60, "r": 20},
-        legend={"bgcolor": "#16213e", "bordercolor": "#2a2a4a"},
+        legend={"bgcolor": "#16213e", "bordercolor": "#2a2a4a",
+                "orientation": "h", "y": -0.15},
     )
 
 
@@ -169,7 +199,8 @@ def _dark_layout():
     Output("cot-chart", "figure"),
     Output("cot-percentile-badge", "children"),
     Input("cot-commodity", "value"),
+    Input("cot-period", "value"),
     Input("auto-refresh", "n_intervals"),
 )
-def update_cot(slug, _):
-    return build_cot_chart(slug), build_percentile_badge(slug)
+def update_cot(slug, weeks, _):
+    return build_cot_chart(slug, weeks or 104), build_percentile_badge(slug)

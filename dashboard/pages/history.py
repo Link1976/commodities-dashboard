@@ -22,7 +22,19 @@ PERIOD_OPTIONS = [
     {"label": "3Y",  "value": 1095},
 ]
 
+_INFO = ("📊 **Histórico de precios** — Velas japonesas con volumen. "
+         "MA20/MA50/MA200: medias móviles para identificar tendencia. "
+         "Cuando el precio cruza la MA200 al alza es señal de cambio de tendencia a largo plazo.")
+
 layout = html.Div([
+    dbc.Row(dbc.Col(
+        dbc.Alert(
+            dcc.Markdown(_INFO, style={"fontSize": "12px", "marginBottom": "0"}),
+            color="dark",
+            style={"backgroundColor": "#16213e", "border": "1px solid #2a2a4a",
+                   "padding": "8px 16px", "marginBottom": "12px"},
+        )
+    )),
     dbc.Row([
         dbc.Col(
             dcc.Dropdown(

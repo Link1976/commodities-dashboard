@@ -11,7 +11,27 @@ COMMODITY_OPTIONS = [
     for key, cfg in FUTURES_CURVE.items()
 ]
 
+_INFO = """
+**Curva de futuros (Term Structure)**
+
+Muestra los precios de los contratos M1 (mes más próximo) a M6 (6 meses vista).
+
+- 📈 **Contango** (curva ascendente): el futuro cuesta más que el spot.
+  Normal cuando hay costes de almacenamiento. Indica oferta abundante.
+- 📉 **Backwardation** (curva descendente): el futuro cuesta menos que el spot.
+  Señal de escasez física — el mercado paga prima por entrega inmediata.
+  En metales preciosos es raro y muy alcista.
+"""
+
 layout = html.Div([
+    dbc.Row(dbc.Col(
+        dbc.Alert(
+            dcc.Markdown(_INFO, style={"fontSize": "12px", "marginBottom": "0"}),
+            color="dark",
+            style={"backgroundColor": "#16213e", "border": "1px solid #2a2a4a",
+                   "padding": "10px 16px", "marginBottom": "12px"},
+        )
+    )),
     dbc.Row([
         dbc.Col(
             dcc.Dropdown(

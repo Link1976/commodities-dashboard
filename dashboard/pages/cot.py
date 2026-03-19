@@ -23,7 +23,28 @@ SLUG_TO_TICKER = {
     "copper":    "HG=F",
 }
 
+_INFO = """
+**COT — Commitment of Traders (CFTC)**
+
+Informe semanal del regulador de futuros de EEUU. Muestra el posicionamiento neto de:
+
+- 🔵 **Non-Commercials (especuladores)**: fondos, hedge funds. Siguen tendencias.
+  Posición neta alta = mercado muy largo → posible techo. Baja = posible suelo.
+- 🟠 **Commercials (hedgers)**: productores y consumidores reales. Suelen ir a contracorriente.
+- **Índice COT**: percentil de la posición especuladora vs los últimos 3 años.
+  Por encima de 70% → especuladores muy largos (señal de cautela).
+  Por debajo de 30% → especuladores muy cortos (señal contraria alcista).
+"""
+
 layout = html.Div([
+    dbc.Row(dbc.Col(
+        dbc.Alert(
+            dcc.Markdown(_INFO, style={"fontSize": "12px", "marginBottom": "0"}),
+            color="dark",
+            style={"backgroundColor": "#16213e", "border": "1px solid #2a2a4a",
+                   "padding": "10px 16px", "marginBottom": "12px"},
+        )
+    )),
     dbc.Row([
         dbc.Col(
             dcc.Dropdown(

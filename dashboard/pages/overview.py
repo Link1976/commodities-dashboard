@@ -228,4 +228,17 @@ def build_ratio_cards():
     Input("auto-refresh",  "n_intervals"),
 )
 def update_overview(_):
-    return build_prices_table(), build_ratio_cards()
+    try:
+        table = build_prices_table()
+        print(f"[overview] tabla OK: {len(table.data)} filas")
+    except Exception as e:
+        import traceback
+        print(f"[overview] ERROR tabla: {e}")
+        traceback.print_exc()
+        table = html.P(f"Error cargando tabla: {e}", style={"color": "red"})
+    try:
+        ratios = build_ratio_cards()
+    except Exception as e:
+        print(f"[overview] ERROR ratios: {e}")
+        ratios = html.P(f"Error ratios: {e}", style={"color": "red"})
+    return table, ratios

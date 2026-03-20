@@ -230,6 +230,9 @@ def fetch_history(days: int = 365):
                 log.warning(f"  {ticker}: no data returned")
                 print(f"[history] {ticker}: sin datos")
                 continue
+            # yfinance 1.x returns MultiIndex columns for single ticker — flatten
+            if isinstance(data.columns, pd.MultiIndex):
+                data.columns = data.columns.get_level_values(0)
             if cat in ("fx", "currency"):
                 n = upsert_fx(conn, ticker, data)
             else:

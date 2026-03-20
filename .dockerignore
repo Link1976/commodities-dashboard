@@ -1,0 +1,12 @@
+__pycache__
+**/__pycache__
+*.pyc
+*.pyo
+.git
+.gitignore
+data/commodities.db
+logs/
+*.log
+abrir_dashboard.command
+annual.txt
+launchd/

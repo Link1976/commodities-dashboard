@@ -28,4 +28,5 @@ app.layout = build_layout()
 from dashboard.pages import overview, term_structure, history, cot  # noqa: F401
 
 if __name__ == "__main__":
-    app.run(debug=False, host="127.0.0.1", port=8050)
+    port = int(os.environ.get("PORT", 7860))
+    app.run(debug=False, host="0.0.0.0", port=port)

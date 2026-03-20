@@ -108,11 +108,8 @@ def build_cot_chart(slug: str, weeks: int = 104):
     ticker = SLUG_TO_TICKER.get(slug)
     price_dates, price_vals = [], []
     if ticker and dates:
-        # Use weeks * 7 days to match the COT period
         price_rows = get_price_series(ticker, days=weeks * 7)
-        # Only keep dates within the COT range
-        if price_rows and dates:
-            price_rows = [r for r in price_rows if r["date"] >= dates[0]]
+        price_rows = [r for r in price_rows if r["date"] >= dates[0]]
         price_dates = [r["date"]  for r in price_rows]
         price_vals  = [r["close"] for r in price_rows]
 
@@ -120,26 +117,27 @@ def build_cot_chart(slug: str, weeks: int = 104):
         rows=2, cols=1,
         shared_xaxes=True,
         row_heights=[0.55, 0.45],
-        vertical_spacing=0.04,
+        vertical_spacing=0.06,
         subplot_titles=["Posición neta (contratos)", "Precio spot"],
     )
 
-    # Non-commercial bars
-    nc_colors = ["#2ecc71" if v >= 0 else "#e74c3c" for v in noncomm_net]
-    fig.add_trace(go.Bar(
+    # Non-commercial — line, filled area to zero
+    fig.add_trace(go.Scatter(
         x=dates, y=noncomm_net,
-        marker_color=nc_colors,
+        mode="lines",
         name="No-Comerciales (especuladores)",
-        opacity=0.85,
+        line={"color": "#2ecc71", "width": 2},
+        fill="tozeroy",
+        fillcolor="rgba(46,204,113,0.12)",
         hovertemplate="%{x}<br>%{y:,.0f} contratos<extra>Especuladores</extra>",
     ), row=1, col=1)
 
+    # Commercial — line
     fig.add_trace(go.Scatter(
         x=dates, y=comm_net,
         mode="lines",
         name="Comerciales (hedgers)",
-        line={"color": "#e67e22", "width": 1.5, "dash": "dot"},
-        opacity=0.8,
+        line={"color": "#e67e22", "width": 2},
         hovertemplate="%{x}<br>%{y:,.0f} contratos<extra>Hedgers</extra>",
     ), row=1, col=1)
 
@@ -157,10 +155,12 @@ def build_cot_chart(slug: str, weeks: int = 104):
     name = slug.replace("_", " ").title()
     fig.update_layout(
         title=f"{name} — COT",
-        barmode="relative",
         **_dark_layout(),
     )
     fig.update_yaxes(gridcolor="#2a2a4a", zerolinecolor="#2a2a4a")
+    # Force x-axis range to match the requested period
+    if dates:
+        fig.update_xaxes(range=[dates[0], dates[-1]])
     return fig
 
 

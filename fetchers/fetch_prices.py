@@ -213,39 +213,37 @@ def fetch_futures_curves():
 
 
 def fetch_history(days: int = 365):
-    """One-time backfill of historical spot prices."""
+    """One-time backfill of historical spot prices (one ticker at a time)."""
     log.info(f"=== fetch_history ({days} days) start ===")
     conn = get_conn()
-
-    all_tickers = list(TICKERS.keys())
     period = f"{days}d"
-
-    try:
-        data = yf.download(
-            all_tickers, period=period, interval="1d",
-            group_by="ticker", auto_adjust=True, progress=False
-        )
-    except Exception as e:
-        log.error(f"History download failed: {e}")
-        conn.close()
-        return
-
     total = 0
+
     for ticker, meta in TICKERS.items():
         cat = meta["category"]
         try:
-            df = data[ticker] if len(all_tickers) > 1 else data
+            data = yf.download(
+                ticker, period=period, interval="1d",
+                auto_adjust=True, progress=False
+            )
+            if data.empty:
+                log.warning(f"  {ticker}: no data returned")
+                print(f"[history] {ticker}: sin datos")
+                continue
             if cat in ("fx", "currency"):
-                n = upsert_fx(conn, ticker, df)
+                n = upsert_fx(conn, ticker, data)
             else:
-                n = upsert_spot(conn, ticker, meta, df)
+                n = upsert_spot(conn, ticker, meta, data)
             total += n
+            print(f"[history] {ticker}: {n} rows")
             log.info(f"  {ticker}: {n} rows")
         except Exception as e:
             log.warning(f"  {ticker}: {e}")
+            print(f"[history] {ticker}: ERROR {e}")
 
     conn.commit()
     conn.close()
+    print(f"[history] Total: {total} rows guardados")
     log.info(f"History backfill: {total} rows upserted")
 
 

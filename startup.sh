@@ -8,6 +8,13 @@ python -c "from db.schema import init_db; init_db()"
 
 echo "[startup] Fetchando historial de precios (2 años)..."
 python fetchers/fetch_prices.py --history 730 || echo "[startup] WARN: fetch_prices falló"
+python -c "
+from db.schema import get_conn
+conn = get_conn()
+n = conn.execute('SELECT COUNT(*) FROM spot_prices').fetchone()[0]
+print(f'[startup] spot_prices rows en DB: {n}')
+conn.close()
+"
 
 echo "[startup] Fetchando rhodio..."
 python fetchers/fetch_rhodium.py || echo "[startup] WARN: fetch_rhodium falló"

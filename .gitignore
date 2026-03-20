@@ -4,6 +4,5 @@ __pycache__/
 *.pyc
 *.pyo
 .DS_Store
-config.py
 *.db
 annual.txt

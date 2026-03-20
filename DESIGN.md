@@ -287,16 +287,40 @@ Already installed in `cartera`: `yfinance`, `pandas`, `requests`, `beautifulsoup
 
 ---
 
-## Implementation Order
+## Deployment
 
-1. `db/schema.py` — init DB with all tables
-2. `config.py` — tickers, EIA key, paths
-3. `fetchers/fetch_prices.py` — spot + futures + FX
-4. `fetchers/fetch_rhodium.py` — Kitco scrape
-5. `fetchers/fetch_eia.py`
-6. `fetchers/fetch_cot.py`
-7. `fetchers/fetch_lme.py`
-8. `dashboard/app.py` + `layout.py` (shell)
-9. `db/queries.py`
-10. Dashboard pages (tabs 1→7)
-11. `run_fetcher.sh` + launchd plists
+| Target | URL |
+|---|---|
+| HuggingFace Space | `https://huggingface.co/spaces/Occam1976/commodities-dashboard` |
+| URL directa (sin barra HF) | `https://occam1976-commodities-dashboard.hf.space` |
+| GitHub | `https://github.com/Link1976/commodities-dashboard` |
+
+**Deploy:** `git push origin main && git push hf main`
+
+**Secrets en HF Spaces:** `EIA_API_KEY`, `NASDAQ_API_KEY`
+
+**Nota:** La DB SQLite es efímera en HF (se repuebla en cada restart vía `startup.sh`). Los fetchers schedulados (launchd) solo aplican en local.
+
+---
+
+## Implementation Status
+
+| Componente | Estado |
+|---|---|
+| `db/schema.py` + `db/queries.py` | ✅ |
+| `config.py` | ✅ |
+| `fetchers/fetch_prices.py` | ✅ |
+| `fetchers/fetch_rhodium.py` | ✅ |
+| `fetchers/fetch_eia.py` | ✅ |
+| `fetchers/fetch_cot.py` | ✅ |
+| `fetchers/fetch_lme.py` | ✅ |
+| `dashboard/app.py` + `layout.py` | ✅ |
+| Tab 1: Overview | ✅ |
+| Tab 2: Term Structure | ✅ |
+| Tab 3: History | ✅ |
+| Tab 4: COT | ✅ |
+| Tab 5: Inventories (EIA) | ⏳ pendiente |
+| Tab 6: LME Stocks | ⏳ pendiente |
+| Tab 7: Currencies | ⏳ pendiente |
+| `Dockerfile` + `startup.sh` | ✅ |
+| launchd plists (local) | ⏳ pendiente |

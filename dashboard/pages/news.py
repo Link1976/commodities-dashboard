@@ -202,6 +202,8 @@ def _render_news(active_tab, active_filter, _n, _ts):
     if active_filter and active_filter != "all":
         articles = [a for a in articles if active_filter in a.get("tags", [])]
 
+    articles.sort(key=lambda x: x["published_dt"], reverse=True)
+
     if not articles:
         return html.P("No hay noticias disponibles.",
                       style={"color": "#64748b", "fontSize": "13px"})

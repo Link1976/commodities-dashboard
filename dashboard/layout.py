@@ -7,6 +7,7 @@ from dashboard.pages.overview       import layout as overview_layout
 from dashboard.pages.term_structure import layout as term_structure_layout
 from dashboard.pages.history        import layout as history_layout
 from dashboard.pages.cot            import layout as cot_layout
+from dashboard.logo_data            import LOGO_SRC
 
 
 def build_layout():
@@ -23,17 +24,15 @@ def build_layout():
             }),
             dbc.Row([
                 dbc.Col(
-                    html.Div([
-                        html.Span("◈ ", style={"color": "#f1c40f", "fontSize": "20px"}),
-                        html.Span("Commodities", style={
-                            "color": "#ffffff", "fontWeight": "700",
-                            "fontSize": "20px", "letterSpacing": "1px",
-                        }),
-                        html.Span(" Dashboard", style={
-                            "color": "#8899aa", "fontWeight": "400",
-                            "fontSize": "20px",
-                        }),
-                    ], style={"padding": "16px 0 10px 0"}),
+                    html.Img(
+                        src=LOGO_SRC,
+                        style={
+                            "height": "54px",
+                            "margin": "8px 0 6px 0",
+                            "mixBlendMode": "screen",   # fondo blanco desaparece en dark bg
+                            "filter": "brightness(1.05) contrast(1.1)",
+                        },
+                    ),
                     xs=12, md=8,
                 ),
                 dbc.Col(

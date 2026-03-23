@@ -81,6 +81,36 @@ def get_ytd_change(ticker: str) -> float | None:
     return None
 
 
+# ── Valuation indicators ──────────────────────────────────────────────────────
+
+def get_52w_range(ticker: str) -> tuple:
+    """(min, max) closing price over the last 365 days."""
+    since = str(date.today() - timedelta(days=365))
+    conn = get_conn()
+    row = conn.execute("""
+        SELECT MIN(close), MAX(close) FROM spot_prices
+        WHERE ticker = ? AND date >= ?
+    """, (ticker, since)).fetchone()
+    conn.close()
+    if row and row[0] is not None and row[1] is not None:
+        return float(row[0]), float(row[1])
+    return None, None
+
+
+def get_ma(ticker: str, period: int = 200) -> float | None:
+    """Simple moving average of the last N closing prices."""
+    conn = get_conn()
+    row = conn.execute("""
+        SELECT AVG(close) FROM (
+            SELECT close FROM spot_prices
+            WHERE ticker = ?
+            ORDER BY date DESC LIMIT ?
+        )
+    """, (ticker, period)).fetchone()
+    conn.close()
+    return float(row[0]) if row and row[0] is not None else None
+
+
 # ── Futures curve ─────────────────────────────────────────────────────────────
 
 def get_futures_curve(commodity: str, on_date: str = None) -> list[dict]:

@@ -6,7 +6,7 @@ from dash import dcc
 
 from db.queries import (
     get_latest_prices, get_pct_change, get_ytd_change,
-    get_fx_rate, get_price_on_date,
+    get_fx_rate, get_price_on_date, get_52w_range, get_ma,
 )
 from config import RATIOS
 
@@ -86,11 +86,39 @@ layout = html.Div([
 
 # ── Data layer ────────────────────────────────────────────────────────────────
 
+def _52w_color(pos):
+    """Color for 52W position: green = near low (cheap), red = near high (expensive)."""
+    if pos is None:
+        return "#555"
+    if pos <= 20:
+        return "#2ecc71"   # near annual low → potentially cheap
+    if pos >= 80:
+        return "#e74c3c"   # near annual high → potentially expensive
+    if pos <= 35:
+        return "#27ae60"
+    if pos >= 65:
+        return "#c0392b"
+    return "#94a3b8"       # mid-range → neutral
+
+
+def _ma200_color(pct):
+    """Color for vs MA200: green = well below (cheap), red = extended above."""
+    if pct is None:
+        return "#555"
+    if pct <= -15:
+        return "#2ecc71"   # significantly below MA200 → potentially undervalued
+    if pct >= 20:
+        return "#e74c3c"   # significantly above MA200 → extended / overvalued
+    if pct <= -5:
+        return "#27ae60"
+    if pct >= 10:
+        return "#c0392b"
+    return "#94a3b8"       # near MA200 → neutral
+
+
 def _get_rows():
     """Query DB and return enriched row list (includes hidden _fields)."""
-    prices   = get_latest_prices()
-    eur_rate = get_fx_rate("EURUSD=X") or 1
-    gbp_rate = get_fx_rate("GBPUSD=X") or 1
+    prices = get_latest_prices()
 
     rows = []
     for p in prices:
@@ -103,17 +131,28 @@ def _get_rows():
         d30 = get_pct_change(ticker, 30)
         ytd = get_ytd_change(ticker)
 
+        # Valuation indicators
+        low52, high52 = get_52w_range(ticker)
+        if low52 is not None and high52 is not None and high52 > low52:
+            pos52 = round((close - low52) / (high52 - low52) * 100, 1)
+        else:
+            pos52 = None
+
+        ma200 = get_ma(ticker, 200)
+        vs_ma200 = round((close - ma200) / ma200 * 100, 1) if ma200 else None
+
         rows.append({
             "Categoría":  CATEGORY_LABELS.get(p["category"], p["category"]),
             "Nombre":     p["name"],
             "Precio USD": f"{close:,.2f}",
-            "1D %":       _fmt(d1, "%"),
-            "1W %":       _fmt(d7, "%"),
+            "1D %":       _fmt(d1,  "%"),
+            "1W %":       _fmt(d7,  "%"),
             "1M %":       _fmt(d30, "%"),
             "YTD %":      _fmt(ytd, "%"),
-            "EUR":        f"{close / eur_rate:,.2f}",
-            "GBP":        f"{close / gbp_rate:,.2f}",
+            "52S %":      f"{pos52:.0f}%" if pos52 is not None else "—",
+            "vs MA200":   _fmt(vs_ma200, "%"),
             "_d1": d1, "_d7": d7, "_d30": d30, "_ytd": ytd,
+            "_pos52": pos52, "_vs_ma200": vs_ma200,
             "_cat": p["category"],
         })
 
@@ -181,7 +220,7 @@ def build_movers_strip(rows):
 # ── Prices table ──────────────────────────────────────────────────────────────
 
 def build_prices_table(rows):
-    visible = ["Nombre", "Precio USD", "1D %", "1W %", "1M %", "YTD %", "EUR", "GBP"]
+    visible = ["Nombre", "Precio USD", "1D %", "1W %", "1M %", "YTD %", "52S %", "vs MA200"]
 
     style_data_conditional = []
 
@@ -193,7 +232,7 @@ def build_prices_table(rows):
             "borderLeft": f"3px solid {cat_color}",
         })
 
-        # % change: color only, no background tint
+        # % change: color only
         for field, col in [("_d1", "1D %"), ("_d7", "1W %"), ("_d30", "1M %"), ("_ytd", "YTD %")]:
             val = row.get(field)
             style_data_conditional.append({
@@ -201,6 +240,18 @@ def build_prices_table(rows):
                 "color": _semaphore_color(val),
                 "fontWeight": "700" if val is not None and abs(val) >= ALERT_1D_YELLOW else "normal",
             })
+
+        # Valuation indicators
+        style_data_conditional.append({
+            "if": {"row_index": i, "column_id": "52S %"},
+            "color": _52w_color(row.get("_pos52")),
+            "fontWeight": "700",
+        })
+        style_data_conditional.append({
+            "if": {"row_index": i, "column_id": "vs MA200"},
+            "color": _ma200_color(row.get("_vs_ma200")),
+            "fontWeight": "700",
+        })
 
         # Alternate row background for readability
         if i % 2 == 0:
@@ -253,12 +304,12 @@ def build_prices_table(rows):
         page_size=50,
         sort_action="native",
         tooltip_header={
-            "1D %":  "Cambio porcentual en el último día",
-            "1W %":  "Cambio porcentual en los últimos 7 días",
-            "1M %":  "Cambio porcentual en los últimos 30 días",
-            "YTD %": "Cambio porcentual desde el 1 de enero",
-            "EUR":   "Precio convertido a EUR al tipo de cambio actual",
-            "GBP":   "Precio convertido a GBP al tipo de cambio actual",
+            "1D %":    "Cambio porcentual en el último día",
+            "1W %":    "Cambio porcentual en los últimos 7 días",
+            "1M %":    "Cambio porcentual en los últimos 30 días",
+            "YTD %":   "Cambio porcentual desde el 1 de enero",
+            "52S %":   "Posición en el rango anual (0% = mínimo del año, 100% = máximo). Verde < 25% (cerca de mínimos, potencialmente barato). Rojo > 75% (cerca de máximos, potencialmente caro).",
+            "vs MA200":"Desviación respecto a la media móvil de 200 días. Muy negativo = precio por debajo de tendencia de largo plazo (potencialmente infravaluado). Muy positivo = extendido sobre tendencia.",
         },
         tooltip_delay=0,
         tooltip_duration=None,

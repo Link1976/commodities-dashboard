@@ -64,11 +64,13 @@ def _ratio_semaphore(value, alert_high, alert_low):
 
 # ── Layout ────────────────────────────────────────────────────────────────────
 layout = html.Div([
-    dbc.Row([
-        dbc.Col(html.Div(id="prices-table"), xs=12, lg=8,
-                style={"marginBottom": "16px"}),
-        dbc.Col(html.Div(id="ratio-cards"),  xs=12, lg=4),
-    ]),
+    dbc.Row(
+        dbc.Col(html.Div(id="prices-table"), xs=12),
+        style={"marginBottom": "16px"},
+    ),
+    dbc.Row(
+        dbc.Col(html.Div(id="ratio-cards"), xs=12),
+    ),
 ], style={"padding": "8px"})
 
 
@@ -221,12 +223,16 @@ def build_ratio_cards():
                 style={
                     "backgroundColor": "#16213e",
                     "border": f"1px solid {sem_color if sem_color != '#2ecc71' else '#2a2a4a'}",
-                    "marginBottom": "8px",
+                    "flex": "1 1 200px",
+                    "minWidth": "180px",
+                    "maxWidth": "280px",
                 },
             )
         )
 
-    return html.Div(cards)
+    return html.Div(cards, style={
+        "display": "flex", "flexWrap": "wrap", "gap": "8px",
+    })
 
 
 # ── Callback ──────────────────────────────────────────────────────────────────

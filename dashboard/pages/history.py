@@ -178,6 +178,7 @@ def _dark_layout():
     Input("hist-ma", "value"),
     Input("auto-refresh", "n_intervals"),
     Input("main-tabs", "active_tab"),
+    Input("manual-refresh-ts", "data"),
 )
-def update_history(ticker, days, ma_periods, _, active_tab):
+def update_history(ticker, days, ma_periods, _, active_tab, refresh_ts):
     return build_history_chart(ticker, days or 365, ma_periods or [])

@@ -5,6 +5,8 @@ Open: http://127.0.0.1:8050
 """
 import os
 import sys
+import threading
+import time
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -13,6 +15,25 @@ from dash import dcc, html
 import dash_bootstrap_components as dbc
 
 from dashboard.layout import build_layout
+
+
+def _background_fetch():
+    """Fetchea precios cada 30 minutos en background."""
+    time.sleep(15)  # espera a que la app arranque
+    while True:
+        try:
+            from fetchers.fetch_prices import main as fetch_main
+            print("[bg-fetch] iniciando fetch programado...")
+            fetch_main()
+            print("[bg-fetch] fetch completado")
+        except Exception as e:
+            print(f"[bg-fetch] error: {e}")
+        time.sleep(30 * 60)
+
+
+# Lanza el hilo de fetch en background (una sola vez)
+threading.Thread(target=_background_fetch, daemon=True, name="bg-fetch").start()
+
 
 app = dash.Dash(
     __name__,

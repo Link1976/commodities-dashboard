@@ -235,8 +235,10 @@ def build_ratio_cards():
     Output("prices-table", "children"),
     Output("ratio-cards",  "children"),
     Input("auto-refresh",  "n_intervals"),
+    Input("main-tabs", "active_tab"),
+    Input("manual-refresh-ts", "data"),
 )
-def update_overview(_):
+def update_overview(_, active_tab, refresh_ts):
     try:
         table = build_prices_table()
         print(f"[overview] tabla OK: {len(table.data)} filas")

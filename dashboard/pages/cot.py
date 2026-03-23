@@ -202,6 +202,7 @@ def _dark_layout():
     Input("cot-period", "value"),
     Input("auto-refresh", "n_intervals"),
     Input("main-tabs", "active_tab"),
+    Input("manual-refresh-ts", "data"),
 )
-def update_cot(slug, weeks, _, active_tab):
+def update_cot(slug, weeks, _, active_tab, refresh_ts):
     return build_cot_chart(slug, weeks or 104), build_percentile_badge(slug)

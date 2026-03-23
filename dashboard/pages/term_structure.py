@@ -199,8 +199,9 @@ def _dark_layout():
     Input("curve-commodity", "value"),
     Input("auto-refresh", "n_intervals"),
     Input("main-tabs", "active_tab"),
+    Input("manual-refresh-ts", "data"),
 )
-def update_date_options(commodity, _, active_tab):
+def update_date_options(commodity, _, active_tab, refresh_ts):
     dates = get_curve_dates(commodity)
     options = [{"label": d, "value": d} for d in dates]
     return options, None   # None = latest
@@ -213,6 +214,7 @@ def update_date_options(commodity, _, active_tab):
     Input("curve-date-dropdown", "value"),
     Input("auto-refresh", "n_intervals"),
     Input("main-tabs", "active_tab"),
+    Input("manual-refresh-ts", "data"),
 )
-def update_curve(commodity, on_date, _, active_tab):
+def update_curve(commodity, on_date, _, active_tab, refresh_ts):
     return build_curve_chart(commodity, on_date), build_curve_table(commodity, on_date)

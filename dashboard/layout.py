@@ -1,4 +1,5 @@
 """layout.py — Top-level tab structure and refresh interval."""
+from datetime import datetime
 from dash import dcc, html, Input, Output, callback
 import dash_bootstrap_components as dbc
 
@@ -14,7 +15,7 @@ def build_layout():
         style={"backgroundColor": "#1a1a2e", "minHeight": "100vh"},
         children=[
             # ── Header ────────────────────────────────────────────────────────
-            dbc.Row(
+            dbc.Row([
                 dbc.Col(
                     html.H2(
                         "Commodities Dashboard",
@@ -24,9 +25,33 @@ def build_layout():
                             "fontWeight": "600",
                             "letterSpacing": "1px",
                         }
-                    )
-                )
-            ),
+                    ),
+                    xs=12, md=8,
+                ),
+                dbc.Col(
+                    html.Div([
+                        dcc.Loading(
+                            type="dot",
+                            color="#3498db",
+                            children=html.Span(id="refresh-status",
+                                               style={"color": "#888", "fontSize": "11px"}),
+                        ),
+                        dbc.Button(
+                            "⟳ Actualizar",
+                            id="refresh-btn",
+                            color="secondary",
+                            outline=True,
+                            size="sm",
+                            style={"marginLeft": "10px"},
+                        ),
+                    ], style={"display": "flex", "alignItems": "center",
+                              "justifyContent": "flex-end", "paddingTop": "14px"}),
+                    xs=12, md=4,
+                ),
+            ]),
+
+            # Store para propagar refresh manual a todos los callbacks
+            dcc.Store(id="manual-refresh-ts", data=0),
 
             # ── Tabs ──────────────────────────────────────────────────────────
             dbc.Tabs(
@@ -65,3 +90,16 @@ def render_tab(tab):
     if tab == "tab-cot":
         return cot_layout
     return html.P("Tab not found")
+
+
+@callback(
+    Output("manual-refresh-ts", "data"),
+    Output("refresh-status", "children"),
+    Input("refresh-btn", "n_clicks"),
+    prevent_initial_call=True,
+)
+def manual_refresh(n_clicks):
+    from fetchers.fetch_prices import main as fetch_main
+    fetch_main()
+    ts = datetime.now().strftime("%H:%M:%S")
+    return n_clicks, f"Actualizado {ts}"

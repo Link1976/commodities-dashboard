@@ -72,11 +72,28 @@ def _ratio_semaphore(value, alert_high, alert_low):
 
 
 # ── Layout ────────────────────────────────────────────────────────────────────
+_LEGEND = html.Div([
+    html.Span("Columnas: ", style={"color": "#4b5563", "fontSize": "11px"}),
+    html.Span("1D/1W/1M/YTD ", style={"color": "#64748b", "fontSize": "11px", "fontWeight": "600"}),
+    html.Span("cambio % · ", style={"color": "#4b5563", "fontSize": "11px"}),
+    html.Span("52S %", style={"color": "#64748b", "fontSize": "11px", "fontWeight": "600"}),
+    html.Span(" posición en rango anual (0%=mín, 100%=máx — ", style={"color": "#4b5563", "fontSize": "11px"}),
+    html.Span("verde<25%", style={"color": "#2ecc71", "fontSize": "11px"}),
+    html.Span(" barato · ", style={"color": "#4b5563", "fontSize": "11px"}),
+    html.Span("rojo>75%", style={"color": "#e74c3c", "fontSize": "11px"}),
+    html.Span(") · ", style={"color": "#4b5563", "fontSize": "11px"}),
+    html.Span("vs MA200", style={"color": "#64748b", "fontSize": "11px", "fontWeight": "600"}),
+    html.Span(" desviación vs media 200 días (", style={"color": "#4b5563", "fontSize": "11px"}),
+    html.Span("verde", style={"color": "#2ecc71", "fontSize": "11px"}),
+    html.Span("=por debajo·infravaluado, ", style={"color": "#4b5563", "fontSize": "11px"}),
+    html.Span("rojo", style={"color": "#e74c3c", "fontSize": "11px"}),
+    html.Span("=extendido·sobrecomprado)", style={"color": "#4b5563", "fontSize": "11px"}),
+], style={"marginTop": "6px", "marginBottom": "16px", "paddingLeft": "2px"})
+
 layout = html.Div([
     html.Div(id="movers-strip", style={"marginBottom": "12px"}),
     dbc.Row(
-        dbc.Col(html.Div(id="prices-table"), xs=12),
-        style={"marginBottom": "16px"},
+        dbc.Col([html.Div(id="prices-table"), _LEGEND], xs=12),
     ),
     dbc.Row(
         dbc.Col(html.Div(id="ratio-cards"), xs=12),
@@ -301,16 +318,6 @@ def build_prices_table(rows):
         style_data_conditional=style_data_conditional,
         page_size=50,
         sort_action="native",
-        tooltip_header={
-            "1D %":    "Cambio porcentual en el último día",
-            "1W %":    "Cambio porcentual en los últimos 7 días",
-            "1M %":    "Cambio porcentual en los últimos 30 días",
-            "YTD %":   "Cambio porcentual desde el 1 de enero",
-            "52S %":   "Posición en el rango anual (0% = mínimo del año, 100% = máximo). Verde < 25% (cerca de mínimos, potencialmente barato). Rojo > 75% (cerca de máximos, potencialmente caro).",
-            "vs MA200":"Desviación respecto a la media móvil de 200 días. Muy negativo = precio por debajo de tendencia de largo plazo (potencialmente infravaluado). Muy positivo = extendido sobre tendencia.",
-        },
-        tooltip_delay=0,
-        tooltip_duration=None,
     )
 
 

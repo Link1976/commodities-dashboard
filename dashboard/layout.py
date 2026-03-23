@@ -24,15 +24,28 @@ def build_layout():
             }),
             dbc.Row([
                 dbc.Col(
-                    html.Img(
-                        src=LOGO_SRC,
-                        style={
-                            "height": "54px",
-                            "margin": "8px 0 6px 0",
-                            "mixBlendMode": "screen",   # fondo blanco desaparece en dark bg
-                            "filter": "brightness(1.05) contrast(1.1)",
-                        },
-                    ),
+                    html.Div([
+                        html.Img(
+                            src=LOGO_SRC,
+                            style={
+                                "height": "54px",
+                                "margin": "8px 12px 6px 0",
+                                "mixBlendMode": "screen",
+                                "filter": "brightness(1.05) contrast(1.1)",
+                                "verticalAlign": "middle",
+                            },
+                        ),
+                        html.Div([
+                            html.Span("Commodity Pulse",
+                                      style={"fontSize": "20px", "fontWeight": "700",
+                                             "color": "#f1f5f9", "letterSpacing": "0.5px",
+                                             "lineHeight": "1.2"}),
+                            html.Br(),
+                            html.Span("Real-time commodities dashboard",
+                                      style={"fontSize": "11px", "color": "#64748b",
+                                             "letterSpacing": "0.3px"}),
+                        ], style={"display": "inline-block", "verticalAlign": "middle"}),
+                    ], style={"display": "flex", "alignItems": "center"}),
                     xs=12, md=8,
                 ),
                 dbc.Col(

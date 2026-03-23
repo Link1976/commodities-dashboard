@@ -23,7 +23,9 @@ TICKERS = {
     # Energy
     "CL=F":  {"name": "WTI Crude",      "category": "energy",     "unit": "USD/bbl"},
     "BZ=F":  {"name": "Brent Crude",    "category": "energy",     "unit": "USD/bbl"},
-    "NG=F":  {"name": "Nat Gas",        "category": "energy",     "unit": "USD/MMBtu"},
+    "NG=F":  {"name": "Nat Gas (USA)",   "category": "energy",     "unit": "USD/MMBtu"},
+    "TTF=F": {"name": "Nat Gas Europa (TTF)", "category": "energy", "unit": "EUR/MWh"},
+    "JKM=F": {"name": "Nat Gas Asia (JKM)",   "category": "energy", "unit": "USD/MMBtu"},
     "HO=F":  {"name": "Heating Oil",    "category": "energy",     "unit": "USD/gal"},
     "RB=F":  {"name": "Gasoline",       "category": "energy",     "unit": "USD/gal"},
     # Carbon — no direct futures on Yahoo Finance; liquid US producer stocks as proxies

@@ -89,7 +89,7 @@ app = dash.Dash(
 app.layout = build_layout()
 
 # Import pages so their callbacks are registered
-from dashboard.pages import overview, term_structure, history, cot  # noqa: F401
+from dashboard.pages import overview, term_structure, history, cot, news  # noqa: F401
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 7860))

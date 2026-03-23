@@ -7,6 +7,7 @@ from dashboard.pages.overview       import layout as overview_layout
 from dashboard.pages.term_structure import layout as term_structure_layout
 from dashboard.pages.history        import layout as history_layout
 from dashboard.pages.cot            import layout as cot_layout
+from dashboard.pages.news           import layout as news_layout
 from dashboard.logo_data            import LOGO_SRC
 
 
@@ -91,6 +92,9 @@ def build_layout():
                     dbc.Tab(label="COT",            tab_id="tab-cot",
                             label_style={"color": "#8899aa", "fontSize": "13px"},
                             active_label_style={"color": "#ffffff", "fontWeight": "700"}),
+                    dbc.Tab(label="Noticias",       tab_id="tab-news",
+                            label_style={"color": "#8899aa", "fontSize": "13px"},
+                            active_label_style={"color": "#ffffff", "fontWeight": "700"}),
                 ],
                 style={"marginBottom": "16px", "borderBottom": "1px solid #1e2d3d"},
             ),
@@ -118,6 +122,8 @@ def render_tab(tab):
         return history_layout
     if tab == "tab-cot":
         return cot_layout
+    if tab == "tab-news":
+        return news_layout
     return html.P("Tab not found")
 
 

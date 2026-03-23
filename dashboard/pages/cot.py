@@ -201,6 +201,7 @@ def _dark_layout():
     Input("cot-commodity", "value"),
     Input("cot-period", "value"),
     Input("auto-refresh", "n_intervals"),
+    Input("main-tabs", "active_tab"),
 )
-def update_cot(slug, weeks, _):
+def update_cot(slug, weeks, _, active_tab):
     return build_cot_chart(slug, weeks or 104), build_percentile_badge(slug)

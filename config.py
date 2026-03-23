@@ -35,6 +35,10 @@ TICKERS = {
     "ALI=F": {"name": "Aluminum",    "category": "industrial", "unit": "USD/lb"},
     "ZNC=F": {"name": "Zinc",        "category": "industrial", "unit": "USD/t"},
     "NI=F":  {"name": "Nickel",      "category": "industrial", "unit": "USD/t"},
+    # Estaño: no hay proxy líquido en Yahoo Finance — pendiente fuente alternativa (LME directo)
+
+    # Nuclear / Uranium (no futures on Yahoo — Cameco as proxy)
+    "CCJ":   {"name": "Uranium ⚠️ proxy", "category": "nuclear",    "unit": "USD"},
 
     # Producer currencies (vs USD)
     "ZARUSD=X": {"name": "ZAR/USD",  "category": "currency",   "unit": "rate"},

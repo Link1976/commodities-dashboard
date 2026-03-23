@@ -82,6 +82,7 @@ layout = html.Div([
     # Chart + table — stack on mobile
     dbc.Row([
         dbc.Col(dcc.Graph(id="curve-chart",
+                          style={"height": "420px"},
                           config={"displayModeBar": False}),
                 xs=12, md=8),
         dbc.Col(html.Div(id="curve-table",
@@ -197,8 +198,9 @@ def _dark_layout():
     Output("curve-date-dropdown", "value"),
     Input("curve-commodity", "value"),
     Input("auto-refresh", "n_intervals"),
+    Input("main-tabs", "active_tab"),
 )
-def update_date_options(commodity, _):
+def update_date_options(commodity, _, active_tab):
     dates = get_curve_dates(commodity)
     options = [{"label": d, "value": d} for d in dates]
     return options, None   # None = latest
@@ -210,6 +212,7 @@ def update_date_options(commodity, _):
     Input("curve-commodity", "value"),
     Input("curve-date-dropdown", "value"),
     Input("auto-refresh", "n_intervals"),
+    Input("main-tabs", "active_tab"),
 )
-def update_curve(commodity, on_date, _):
+def update_curve(commodity, on_date, _, active_tab):
     return build_curve_chart(commodity, on_date), build_curve_table(commodity, on_date)

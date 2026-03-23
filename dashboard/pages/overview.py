@@ -11,13 +11,14 @@ from db.queries import (
 from config import RATIOS
 
 # ── Category display order ────────────────────────────────────────────────────
-CATEGORY_ORDER  = ["precious", "pgm", "energy", "carbon", "industrial", "currency"]
+CATEGORY_ORDER  = ["precious", "pgm", "energy", "carbon", "industrial", "nuclear", "currency"]
 CATEGORY_LABELS = {
     "precious":   "Metales Preciosos",
     "pgm":        "PGMs",
     "energy":     "Energía",
     "carbon":     "Carbón ⚠️ proxy",
     "industrial": "Metales Industriales",
+    "nuclear":    "Nuclear / Uranium ⚠️ proxy",
     "currency":   "Divisas Productoras",
 }
 
@@ -111,7 +112,7 @@ def build_prices_table():
         r["Nombre"]
     ))
 
-    visible = ["Categoría", "Nombre", "Precio USD",
+    visible = ["Nombre", "Precio USD",
                "1D %", "1W %", "1M %", "YTD %", "EUR", "GBP"]
 
     # Conditional formatting: color + weight by magnitude
@@ -129,7 +130,14 @@ def build_prices_table():
     return dash_table.DataTable(
         data=[{k: v for k, v in r.items() if not k.startswith("_")} for r in rows],
         columns=[{"name": c, "id": c} for c in visible],
-        style_table={"overflowX": "auto"},
+        fixed_rows={"headers": True},
+        fixed_columns={"headers": True, "data": 1},
+        style_table={
+            "overflowX": "auto",
+            "overflowY": "auto",
+            "maxHeight": "75vh",
+            "minWidth": "100%",
+        },
         style_header={
             "backgroundColor": "#16213e", "color": "#a0a0b0",
             "fontWeight": "600", "border": "1px solid #2a2a4a", "fontSize": "12px",
@@ -138,13 +146,14 @@ def build_prices_table():
             "backgroundColor": "#0f3460", "color": "#e0e0e0",
             "border": "1px solid #1a1a3e", "fontSize": "13px",
             "padding": "8px 12px", "textAlign": "right",
+            "minWidth": "70px",
         },
         style_cell_conditional=[
-            {"if": {"column_id": c}, "textAlign": "left"}
-            for c in ["Categoría", "Nombre"]
+            {"if": {"column_id": "Nombre"},
+             "textAlign": "left", "minWidth": "110px", "width": "110px", "maxWidth": "140px"},
         ],
         style_data_conditional=style_data_conditional,
-        page_size=30,
+        page_size=50,
         sort_action="native",
         tooltip_header={
             "1D %":  "Cambio porcentual en el último día",

@@ -1,4 +1,4 @@
-"""Tab 1 — Overview: spot prices table + ratio cards con semáforos y explicaciones."""
+"""Tab 1 — Overview: movers strip + spot prices table + ratio cards."""
 from datetime import date
 from dash import html, dash_table, Input, Output, callback
 import dash_bootstrap_components as dbc
@@ -10,8 +10,8 @@ from db.queries import (
 )
 from config import RATIOS
 
-# ── Category display order ────────────────────────────────────────────────────
-CATEGORY_ORDER  = ["precious", "pgm", "energy", "carbon", "industrial", "nuclear", "currency"]
+# ── Category order & labels ───────────────────────────────────────────────────
+CATEGORY_ORDER = ["precious", "pgm", "energy", "carbon", "industrial", "nuclear", "currency"]
 CATEGORY_LABELS = {
     "precious":   "Metales Preciosos",
     "pgm":        "PGMs",
@@ -22,39 +22,56 @@ CATEGORY_LABELS = {
     "currency":   "Divisas Productoras",
 }
 
-# ── Semaphore thresholds for % changes ───────────────────────────────────────
-# (abs value of 1D change that triggers yellow/red alert in table)
-ALERT_1D_YELLOW = 2.0   # ±2% in one day → yellow
-ALERT_1D_RED    = 4.0   # ±4% in one day → red
+# Left-border accent color per category (for visual grouping in table)
+CATEGORY_COLORS = {
+    "Metales Preciosos":          "#f1c40f",
+    "PGMs":                       "#bdc3c7",
+    "Energía":                    "#e67e22",
+    "Carbón ⚠️ proxy":            "#7f8c8d",
+    "Metales Industriales":       "#3498db",
+    "Nuclear / Uranium ⚠️ proxy": "#1abc9c",
+}
 
+ALERT_1D_YELLOW = 2.0
+ALERT_1D_RED    = 4.0
+
+
+# ── Helpers ───────────────────────────────────────────────────────────────────
 
 def _fmt(val, suffix=""):
     return f"{val:+.2f}{suffix}" if val is not None else "—"
 
 
-def _semaphore_color(val, yellow_threshold=ALERT_1D_YELLOW, red_threshold=ALERT_1D_RED):
-    """Return color for a % change value."""
+def _semaphore_color(val, yellow=ALERT_1D_YELLOW, red=ALERT_1D_RED):
     if val is None:
-        return "#888"
-    if abs(val) >= red_threshold:
+        return "#555"
+    if abs(val) >= red:
         return "#e74c3c"
-    if abs(val) >= yellow_threshold:
+    if abs(val) >= yellow:
         return "#f39c12"
     return "#2ecc71" if val > 0 else "#95a5a6"
 
 
+def _change_bg(val, yellow=ALERT_1D_YELLOW, red=ALERT_1D_RED):
+    """Subtle background tint for % change cells."""
+    if val is None:
+        return "transparent"
+    if abs(val) >= red:
+        return "rgba(231,76,60,0.18)"
+    if abs(val) >= yellow:
+        return "rgba(243,156,18,0.15)"
+    if val > 0:
+        return "rgba(46,204,113,0.12)"
+    return "transparent"
+
+
 def _ratio_semaphore(value, alert_high, alert_low):
-    """
-    🟢 normal  🟡 cerca del extremo  🔴 en extremo
-    Returns (emoji, color)
-    """
     if value is None:
         return "⚪", "#888"
     triggered_high = alert_high is not None and value >= alert_high
     triggered_low  = alert_low  is not None and value <= alert_low
     near_high = alert_high is not None and value >= alert_high * 0.9
     near_low  = alert_low  is not None and alert_low > 0 and value <= alert_low * 1.1
-
     if triggered_high or triggered_low:
         return "🔴", "#e74c3c"
     if near_high or near_low:
@@ -64,6 +81,7 @@ def _ratio_semaphore(value, alert_high, alert_low):
 
 # ── Layout ────────────────────────────────────────────────────────────────────
 layout = html.Div([
+    html.Div(id="movers-strip", style={"marginBottom": "12px"}),
     dbc.Row(
         dbc.Col(html.Div(id="prices-table"), xs=12),
         style={"marginBottom": "16px"},
@@ -74,13 +92,13 @@ layout = html.Div([
 ], style={"padding": "8px"})
 
 
-# ── Prices table ──────────────────────────────────────────────────────────────
+# ── Data layer ────────────────────────────────────────────────────────────────
 
-def build_prices_table():
+def _get_rows():
+    """Query DB and return enriched row list (includes hidden _fields)."""
     prices   = get_latest_prices()
     eur_rate = get_fx_rate("EURUSD=X") or 1
     gbp_rate = get_fx_rate("GBPUSD=X") or 1
-    today    = str(date.today())
 
     rows = []
     for p in prices:
@@ -103,30 +121,101 @@ def build_prices_table():
             "YTD %":      _fmt(ytd, "%"),
             "EUR":        f"{close / eur_rate:,.2f}",
             "GBP":        f"{close / gbp_rate:,.2f}",
-            "_d1": d1, "_d7": d7, "_ytd": ytd,
+            "_d1": d1, "_d7": d7, "_d30": d30, "_ytd": ytd,
+            "_cat": p["category"],
         })
 
     rows.sort(key=lambda r: (
         CATEGORY_ORDER.index(
-            next((k for k, v in CATEGORY_LABELS.items() if v == r["Categoría"]),
-                 "industrial")
+            next((k for k, v in CATEGORY_LABELS.items() if v == r["Categoría"]), "industrial")
         ),
         r["Nombre"]
     ))
+    return rows
 
-    visible = ["Nombre", "Precio USD",
-               "1D %", "1W %", "1M %", "YTD %", "EUR", "GBP"]
 
-    # Conditional formatting: color + weight by magnitude
+# ── Movers strip ──────────────────────────────────────────────────────────────
+
+def build_movers_strip(rows):
+    valid_d1  = [(r["Nombre"], r["_d1"])  for r in rows if r["_d1"]  is not None]
+    valid_ytd = [(r["Nombre"], r["_ytd"]) for r in rows if r["_ytd"] is not None]
+
+    best_d1   = max(valid_d1,  key=lambda x: x[1])  if valid_d1  else None
+    worst_d1  = min(valid_d1,  key=lambda x: x[1])  if valid_d1  else None
+    best_ytd  = max(valid_ytd, key=lambda x: x[1])  if valid_ytd else None
+    worst_ytd = min(valid_ytd, key=lambda x: x[1])  if valid_ytd else None
+
+    def card(icon, label, name, val, color):
+        return html.Div([
+            html.Div(f"{icon} {label}", style={
+                "color": "#666", "fontSize": "10px",
+                "textTransform": "uppercase", "letterSpacing": "0.8px",
+                "marginBottom": "4px",
+            }),
+            html.Div(name or "—", style={
+                "color": "#c0c0d0", "fontSize": "13px", "fontWeight": "600",
+                "marginBottom": "2px", "whiteSpace": "nowrap",
+                "overflow": "hidden", "textOverflow": "ellipsis",
+            }),
+            html.Div(f"{val:+.2f}%" if val is not None else "—", style={
+                "color": color, "fontSize": "18px", "fontWeight": "700",
+            }),
+        ], style={
+            "backgroundColor": "#16213e",
+            "border": f"1px solid {color}44",
+            "borderTop": f"3px solid {color}",
+            "borderRadius": "6px",
+            "padding": "10px 14px",
+            "flex": "1 1 130px",
+            "minWidth": "120px",
+        })
+
+    return html.Div([
+        card("▲", "Mayor subida hoy",
+             best_d1[0]  if best_d1  else None,
+             best_d1[1]  if best_d1  else None, "#2ecc71"),
+        card("▼", "Mayor caída hoy",
+             worst_d1[0] if worst_d1 else None,
+             worst_d1[1] if worst_d1 else None, "#e74c3c"),
+        card("▲", "Mejor YTD",
+             best_ytd[0]  if best_ytd  else None,
+             best_ytd[1]  if best_ytd  else None, "#3498db"),
+        card("▼", "Peor YTD",
+             worst_ytd[0] if worst_ytd else None,
+             worst_ytd[1] if worst_ytd else None, "#e67e22"),
+    ], style={"display": "flex", "gap": "8px", "flexWrap": "wrap"})
+
+
+# ── Prices table ──────────────────────────────────────────────────────────────
+
+def build_prices_table(rows):
+    visible = ["Nombre", "Precio USD", "1D %", "1W %", "1M %", "YTD %", "EUR", "GBP"]
+
     style_data_conditional = []
+
     for i, row in enumerate(rows):
-        for field, col in [("_d1", "1D %"), ("_d7", "1W %"), ("_ytd", "YTD %")]:
+        # Left border accent by category
+        cat_color = CATEGORY_COLORS.get(row["Categoría"], "#2a2a4a")
+        style_data_conditional.append({
+            "if": {"row_index": i},
+            "borderLeft": f"3px solid {cat_color}",
+        })
+
+        # % change: color + background tint
+        for field, col in [("_d1", "1D %"), ("_d7", "1W %"), ("_d30", "1M %"), ("_ytd", "YTD %")]:
             val = row.get(field)
-            color = _semaphore_color(val)
             style_data_conditional.append({
                 "if": {"row_index": i, "column_id": col},
-                "color": color,
-                "fontWeight": "bold" if val is not None and abs(val) >= ALERT_1D_YELLOW else "normal",
+                "color": _semaphore_color(val),
+                "backgroundColor": _change_bg(val),
+                "fontWeight": "700" if val is not None and abs(val) >= ALERT_1D_YELLOW else "normal",
+            })
+
+        # Alternate row background for readability
+        if i % 2 == 0:
+            style_data_conditional.append({
+                "if": {"row_index": i},
+                "backgroundColor": "#0d2d50",
             })
 
     return dash_table.DataTable(
@@ -137,22 +226,37 @@ def build_prices_table():
         style_table={
             "overflowX": "auto",
             "overflowY": "auto",
-            "maxHeight": "75vh",
+            "maxHeight": "65vh",
             "minWidth": "100%",
+            "borderRadius": "8px",
+            "border": "1px solid #2a2a4a",
         },
         style_header={
-            "backgroundColor": "#16213e", "color": "#a0a0b0",
-            "fontWeight": "600", "border": "1px solid #2a2a4a", "fontSize": "12px",
+            "backgroundColor": "#0a1628",
+            "color": "#8899aa",
+            "fontWeight": "700",
+            "border": "1px solid #1e2d3d",
+            "fontSize": "11px",
+            "textTransform": "uppercase",
+            "letterSpacing": "0.5px",
+            "padding": "10px 12px",
         },
         style_cell={
-            "backgroundColor": "#0f3460", "color": "#e0e0e0",
-            "border": "1px solid #1a1a3e", "fontSize": "13px",
-            "padding": "8px 12px", "textAlign": "right",
-            "minWidth": "70px",
+            "backgroundColor": "#0f3460",
+            "color": "#dde3ea",
+            "border": "1px solid #1a2a3a",
+            "fontSize": "13px",
+            "padding": "9px 12px",
+            "textAlign": "right",
+            "minWidth": "72px",
         },
         style_cell_conditional=[
             {"if": {"column_id": "Nombre"},
-             "textAlign": "left", "minWidth": "110px", "width": "110px", "maxWidth": "140px"},
+             "textAlign": "left", "fontWeight": "600",
+             "minWidth": "110px", "width": "110px", "maxWidth": "140px",
+             "color": "#ffffff"},
+            {"if": {"column_id": "Precio USD"},
+             "fontFamily": "monospace", "color": "#e8edf2"},
         ],
         style_data_conditional=style_data_conditional,
         page_size=50,
@@ -190,45 +294,42 @@ def build_ratio_cards():
             value   = p_num / p_den
             val_str = f"{value:.3f}"
 
-        emoji, sem_color = _ratio_semaphore(
-            value,
-            r.get("alert_high"),
-            r.get("alert_low"),
-        )
-
+        emoji, sem_color = _ratio_semaphore(value, r.get("alert_high"), r.get("alert_low"))
         description = r.get("description", "")
 
-        cards.append(
-            dbc.Card(
-                dbc.CardBody([
-                    # Header: semáforo + nombre
-                    html.Div([
-                        html.Span(emoji, style={"fontSize": "16px", "marginRight": "6px"}),
-                        html.Span(r["name"], style={
-                            "color": "#a0a0b0", "fontSize": "12px", "fontWeight": "600",
-                        }),
-                    ], style={"marginBottom": "4px"}),
-
-                    # Valor
-                    html.H4(val_str, style={
-                        "color": sem_color, "fontWeight": "700", "marginBottom": "8px",
-                    }),
-
-                    # Explicación
-                    html.P(description, style={
-                        "color": "#7a7a9a", "fontSize": "11px",
-                        "marginBottom": "0", "lineHeight": "1.4",
-                    }),
-                ]),
-                style={
-                    "backgroundColor": "#16213e",
-                    "border": f"1px solid {sem_color if sem_color != '#2ecc71' else '#2a2a4a'}",
-                    "flex": "1 1 200px",
-                    "minWidth": "180px",
-                    "maxWidth": "280px",
-                },
-            )
-        )
+        cards.append(html.Div([
+            # Top accent bar
+            html.Div(style={
+                "height": "3px",
+                "backgroundColor": sem_color,
+                "borderRadius": "4px 4px 0 0",
+                "margin": "-12px -12px 10px -12px",
+            }),
+            html.Div([
+                html.Span(emoji, style={"fontSize": "14px", "marginRight": "5px"}),
+                html.Span(r["name"], style={
+                    "color": "#8899aa", "fontSize": "11px", "fontWeight": "700",
+                    "textTransform": "uppercase", "letterSpacing": "0.5px",
+                }),
+            ], style={"marginBottom": "6px"}),
+            html.Div(val_str, style={
+                "color": sem_color, "fontWeight": "700",
+                "fontSize": "22px", "marginBottom": "8px",
+                "fontFamily": "monospace",
+            }),
+            html.P(description, style={
+                "color": "#5a6a7a", "fontSize": "11px",
+                "marginBottom": "0", "lineHeight": "1.45",
+            }),
+        ], style={
+            "backgroundColor": "#16213e",
+            "border": "1px solid #1e2d3d",
+            "borderRadius": "6px",
+            "padding": "12px",
+            "flex": "1 1 200px",
+            "minWidth": "180px",
+            "maxWidth": "300px",
+        }))
 
     return html.Div(cards, style={
         "display": "flex", "flexWrap": "wrap", "gap": "8px",
@@ -238,24 +339,27 @@ def build_ratio_cards():
 # ── Callback ──────────────────────────────────────────────────────────────────
 
 @callback(
-    Output("prices-table", "children"),
-    Output("ratio-cards",  "children"),
-    Input("auto-refresh",  "n_intervals"),
-    Input("main-tabs", "active_tab"),
+    Output("movers-strip",  "children"),
+    Output("prices-table",  "children"),
+    Output("ratio-cards",   "children"),
+    Input("auto-refresh",   "n_intervals"),
+    Input("main-tabs",      "active_tab"),
     Input("manual-refresh-ts", "data"),
 )
 def update_overview(_, active_tab, refresh_ts):
     try:
-        table = build_prices_table()
-        print(f"[overview] tabla OK: {len(table.data)} filas")
+        rows   = _get_rows()
+        movers = build_movers_strip(rows)
+        table  = build_prices_table(rows)
+        print(f"[overview] OK: {len(rows)} filas")
     except Exception as e:
         import traceback
-        print(f"[overview] ERROR tabla: {e}")
         traceback.print_exc()
-        table = html.P(f"Error cargando tabla: {e}", style={"color": "red"})
+        movers = html.Div()
+        table  = html.P(f"Error cargando tabla: {e}", style={"color": "red"})
     try:
         ratios = build_ratio_cards()
     except Exception as e:
         print(f"[overview] ERROR ratios: {e}")
         ratios = html.P(f"Error ratios: {e}", style={"color": "red"})
-    return table, ratios
+    return movers, table, ratios

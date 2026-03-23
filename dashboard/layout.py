@@ -15,17 +15,24 @@ def build_layout():
         style={"backgroundColor": "#1a1a2e", "minHeight": "100vh"},
         children=[
             # ── Header ────────────────────────────────────────────────────────
+            html.Div(style={
+                "height": "3px",
+                "background": "linear-gradient(90deg, #f1c40f, #e67e22, #3498db, #1abc9c)",
+                "margin": "0 -12px 0 -12px",
+            }),
             dbc.Row([
                 dbc.Col(
-                    html.H2(
-                        "Commodities Dashboard",
-                        style={
-                            "color": "#e0e0e0",
-                            "padding": "18px 0 8px 0",
-                            "fontWeight": "600",
-                            "letterSpacing": "1px",
-                        }
-                    ),
+                    html.Div([
+                        html.Span("◈ ", style={"color": "#f1c40f", "fontSize": "20px"}),
+                        html.Span("Commodities", style={
+                            "color": "#ffffff", "fontWeight": "700",
+                            "fontSize": "20px", "letterSpacing": "1px",
+                        }),
+                        html.Span(" Dashboard", style={
+                            "color": "#8899aa", "fontWeight": "400",
+                            "fontSize": "20px",
+                        }),
+                    ], style={"padding": "16px 0 10px 0"}),
                     xs=12, md=8,
                 ),
                 dbc.Col(
@@ -34,7 +41,7 @@ def build_layout():
                             type="dot",
                             color="#3498db",
                             children=html.Span(id="refresh-status",
-                                               style={"color": "#888", "fontSize": "11px"}),
+                                               style={"color": "#556", "fontSize": "11px"}),
                         ),
                         dbc.Button(
                             "⟳ Actualizar",
@@ -42,7 +49,8 @@ def build_layout():
                             color="secondary",
                             outline=True,
                             size="sm",
-                            style={"marginLeft": "10px"},
+                            style={"marginLeft": "10px", "fontSize": "12px",
+                                   "borderColor": "#2a3a4a", "color": "#8899aa"},
                         ),
                     ], style={"display": "flex", "alignItems": "center",
                               "justifyContent": "flex-end", "paddingTop": "14px"}),
@@ -58,12 +66,20 @@ def build_layout():
                 id="main-tabs",
                 active_tab="tab-overview",
                 children=[
-                    dbc.Tab(label="Overview",       tab_id="tab-overview"),
-                    dbc.Tab(label="Term Structure", tab_id="tab-term-structure"),
-                    dbc.Tab(label="History",        tab_id="tab-history"),
-                    dbc.Tab(label="COT",            tab_id="tab-cot"),
+                    dbc.Tab(label="Overview",       tab_id="tab-overview",
+                            label_style={"color": "#8899aa", "fontSize": "13px"},
+                            active_label_style={"color": "#ffffff", "fontWeight": "700"}),
+                    dbc.Tab(label="Futuros",        tab_id="tab-term-structure",
+                            label_style={"color": "#8899aa", "fontSize": "13px"},
+                            active_label_style={"color": "#ffffff", "fontWeight": "700"}),
+                    dbc.Tab(label="Histórico",      tab_id="tab-history",
+                            label_style={"color": "#8899aa", "fontSize": "13px"},
+                            active_label_style={"color": "#ffffff", "fontWeight": "700"}),
+                    dbc.Tab(label="COT",            tab_id="tab-cot",
+                            label_style={"color": "#8899aa", "fontSize": "13px"},
+                            active_label_style={"color": "#ffffff", "fontWeight": "700"}),
                 ],
-                style={"marginBottom": "16px"},
+                style={"marginBottom": "16px", "borderBottom": "1px solid #1e2d3d"},
             ),
 
             # ── Tab content ───────────────────────────────────────────────────

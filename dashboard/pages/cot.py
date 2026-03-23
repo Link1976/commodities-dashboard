@@ -43,7 +43,7 @@ layout = html.Div([
         dbc.Alert(
             dcc.Markdown(_INFO, style={"fontSize": "12px", "marginBottom": "0"}),
             color="dark",
-            style={"backgroundColor": "#16213e", "border": "1px solid #2a2a4a",
+            style={"backgroundColor": "#1f2937", "border": "1px solid #2d3748",
                    "padding": "10px 16px", "marginBottom": "12px"},
         )
     )),
@@ -56,21 +56,21 @@ layout = html.Div([
                 options=COT_OPTIONS,
                 value="gold",
                 clearable=False,
-                style={"backgroundColor": "#16213e", "color": "#000"},
+                style={"backgroundColor": "#1f2937", "color": "#000"},
             ),
             xs=12, md=4, style={"marginBottom": "8px"},
         ),
         dbc.Col(
             html.Div([
                 html.Label("Período:",
-                           style={"color": "#a0a0b0", "fontSize": "12px",
+                           style={"color": "#94a3b8", "fontSize": "12px",
                                   "marginRight": "8px"}),
                 dcc.RadioItems(
                     id="cot-period",
                     options=PERIOD_OPTIONS,
                     value=104,
                     inline=True,
-                    labelStyle={"marginRight": "14px", "color": "#e0e0e0",
+                    labelStyle={"marginRight": "14px", "color": "#cbd5e1",
                                 "fontSize": "13px"},
                 ),
             ], style={"display": "flex", "alignItems": "center"}),
@@ -157,7 +157,7 @@ def build_cot_chart(slug: str, weeks: int = 104):
         title=f"{name} — COT",
         **_dark_layout(),
     )
-    fig.update_yaxes(gridcolor="#2a2a4a", zerolinecolor="#2a2a4a")
+    fig.update_yaxes(gridcolor="#2d3748", zerolinecolor="#2d3748")
     # Force x-axis range to match the requested period
     if dates:
         fig.update_xaxes(range=[dates[0], dates[-1]])
@@ -185,12 +185,12 @@ def build_percentile_badge(slug: str):
 
 def _dark_layout():
     return dict(
-        paper_bgcolor="#1a1a2e",
-        plot_bgcolor="#0f3460",
-        font={"color": "#e0e0e0"},
-        xaxis={"gridcolor": "#2a2a4a"},
+        paper_bgcolor="#111827",
+        plot_bgcolor="#1f2937",
+        font={"color": "#cbd5e1"},
+        xaxis={"gridcolor": "#2d3748"},
         margin={"t": 60, "b": 40, "l": 60, "r": 20},
-        legend={"bgcolor": "#16213e", "bordercolor": "#2a2a4a",
+        legend={"bgcolor": "#1f2937", "bordercolor": "#2d3748",
                 "orientation": "h", "y": -0.15},
     )
 

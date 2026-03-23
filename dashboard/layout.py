@@ -12,13 +12,14 @@ from dashboard.pages.cot            import layout as cot_layout
 def build_layout():
     return dbc.Container(
         fluid=True,
-        style={"backgroundColor": "#1a1a2e", "minHeight": "100vh"},
+        style={"backgroundColor": "#111827", "minHeight": "100vh"},
         children=[
             # ── Header ────────────────────────────────────────────────────────
             html.Div(style={
                 "height": "3px",
-                "background": "linear-gradient(90deg, #f1c40f, #e67e22, #3498db, #1abc9c)",
+                "background": "linear-gradient(90deg, #f1c40f 0%, #e67e22 30%, #3498db 65%, #1abc9c 100%)",
                 "margin": "0 -12px 0 -12px",
+                "opacity": "0.85",
             }),
             dbc.Row([
                 dbc.Col(

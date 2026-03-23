@@ -31,7 +31,7 @@ layout = html.Div([
         dbc.Alert(
             dcc.Markdown(_INFO, style={"fontSize": "12px", "marginBottom": "0"}),
             color="dark",
-            style={"backgroundColor": "#16213e", "border": "1px solid #2a2a4a",
+            style={"backgroundColor": "#1f2937", "border": "1px solid #2d3748",
                    "padding": "8px 16px", "marginBottom": "12px"},
         )
     )),
@@ -42,7 +42,7 @@ layout = html.Div([
                 options=TICKER_OPTIONS,
                 value="GC=F",
                 clearable=False,
-                style={"backgroundColor": "#16213e", "color": "#000"},
+                style={"backgroundColor": "#1f2937", "color": "#000"},
             ),
             xs=12, md=4, style={"marginBottom": "8px"},
         ),
@@ -52,7 +52,7 @@ layout = html.Div([
                 options=PERIOD_OPTIONS,
                 value=365,
                 inline=True,
-                labelStyle={"marginRight": "12px", "color": "#e0e0e0", "fontSize": "13px"},
+                labelStyle={"marginRight": "12px", "color": "#cbd5e1", "fontSize": "13px"},
             ),
             xs=12, md=5, style={"marginBottom": "8px"},
         ),
@@ -66,7 +66,7 @@ layout = html.Div([
                 ],
                 value=[],
                 inline=True,
-                labelStyle={"marginRight": "10px", "color": "#e0e0e0", "fontSize": "13px"},
+                labelStyle={"marginRight": "10px", "color": "#cbd5e1", "fontSize": "13px"},
             ),
             xs=12, md=3, style={"marginBottom": "8px"},
         ),
@@ -156,18 +156,18 @@ def build_history_chart(ticker: str, days: int, ma_periods: list):
         xaxis_rangeslider_visible=False,
         **_dark_layout(),
     )
-    fig.update_yaxes(gridcolor="#2a2a4a", zerolinecolor="#2a2a4a")
+    fig.update_yaxes(gridcolor="#2d3748", zerolinecolor="#2d3748")
     return fig
 
 
 def _dark_layout():
     return dict(
-        paper_bgcolor="#1a1a2e",
-        plot_bgcolor="#0f3460",
-        font={"color": "#e0e0e0"},
-        xaxis={"gridcolor": "#2a2a4a", "zerolinecolor": "#2a2a4a"},
+        paper_bgcolor="#111827",
+        plot_bgcolor="#1f2937",
+        font={"color": "#cbd5e1"},
+        xaxis={"gridcolor": "#2d3748", "zerolinecolor": "#374151"},
         margin={"t": 50, "b": 40, "l": 60, "r": 20},
-        legend={"bgcolor": "#16213e", "bordercolor": "#2a2a4a"},
+        legend={"bgcolor": "#1f2937", "bordercolor": "#2d3748"},
     )
 
 

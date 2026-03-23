@@ -1,0 +1,64 @@
+/* ── Global overrides ──────────────────────────────────────────────────────── */
+body, .container-fluid {
+    background-color: #111827 !important;
+    color: #f1f5f9 !important;
+}
+
+/* ── Tabs: active = underline, no card background ─────────────────────────── */
+.nav-tabs {
+    border-bottom: 1px solid #2d3748 !important;
+}
+.nav-tabs .nav-link {
+    background: transparent !important;
+    border: none !important;
+    border-bottom: 2px solid transparent !important;
+    color: #94a3b8 !important;
+    border-radius: 0 !important;
+    padding: 8px 16px !important;
+    transition: color 0.15s, border-color 0.15s;
+}
+.nav-tabs .nav-link:hover {
+    color: #e2e8f0 !important;
+    border-bottom-color: #4b5563 !important;
+}
+.nav-tabs .nav-link.active {
+    color: #ffffff !important;
+    font-weight: 700 !important;
+    border-bottom: 2px solid #f1c40f !important;
+    background: transparent !important;
+}
+.tab-content {
+    background: transparent !important;
+}
+
+/* ── Scrollbars ───────────────────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: #1f2937; }
+::-webkit-scrollbar-thumb { background: #374151; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #4b5563; }
+
+/* ── DataTable scrollbar override ────────────────────────────────────────── */
+.dash-spreadsheet-container ::-webkit-scrollbar-track { background: #1a2535; }
+.dash-spreadsheet-container ::-webkit-scrollbar-thumb { background: #2d3748; }
+
+/* ── Dropdown (dark mode) ─────────────────────────────────────────────────── */
+.Select-menu-outer { background-color: #1f2937 !important; border-color: #374151 !important; }
+.Select-option { background-color: #1f2937 !important; color: #f1f5f9 !important; }
+.Select-option:hover, .Select-option.is-focused { background-color: #2d3748 !important; }
+
+/* ── Buttons ──────────────────────────────────────────────────────────────── */
+.btn-outline-secondary {
+    border-color: #374151 !important;
+    color: #94a3b8 !important;
+}
+.btn-outline-secondary:hover {
+    background-color: #1f2937 !important;
+    color: #f1f5f9 !important;
+}
+
+/* ── Alerts / info panels ─────────────────────────────────────────────────── */
+.alert-dark {
+    background-color: #1f2937 !important;
+    border-color: #2d3748 !important;
+    color: #94a3b8 !important;
+}

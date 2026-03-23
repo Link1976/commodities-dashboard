@@ -52,16 +52,8 @@ def _semaphore_color(val, yellow=ALERT_1D_YELLOW, red=ALERT_1D_RED):
     return "#2ecc71" if val > 0 else "#95a5a6"
 
 
-def _change_bg(val, yellow=ALERT_1D_YELLOW, red=ALERT_1D_RED):
-    """Subtle background tint for % change cells."""
-    if val is None:
-        return "transparent"
-    if abs(val) >= red:
-        return "rgba(231,76,60,0.18)"
-    if abs(val) >= yellow:
-        return "rgba(243,156,18,0.15)"
-    if val > 0:
-        return "rgba(46,204,113,0.12)"
+def _change_bg(_val):
+    """No background tint on % cells — text color is enough."""
     return "transparent"
 
 
@@ -148,12 +140,12 @@ def build_movers_strip(rows):
     def card(icon, label, name, val, color):
         return html.Div([
             html.Div(f"{icon} {label}", style={
-                "color": "#666", "fontSize": "10px",
+                "color": "#4b5563", "fontSize": "10px",
                 "textTransform": "uppercase", "letterSpacing": "0.8px",
                 "marginBottom": "4px",
             }),
             html.Div(name or "—", style={
-                "color": "#c0c0d0", "fontSize": "13px", "fontWeight": "600",
+                "color": "#94a3b8", "fontSize": "13px", "fontWeight": "600",
                 "marginBottom": "2px", "whiteSpace": "nowrap",
                 "overflow": "hidden", "textOverflow": "ellipsis",
             }),
@@ -161,8 +153,8 @@ def build_movers_strip(rows):
                 "color": color, "fontSize": "18px", "fontWeight": "700",
             }),
         ], style={
-            "backgroundColor": "#16213e",
-            "border": f"1px solid {color}44",
+            "backgroundColor": "#1f2937",
+            "border": "1px solid #2d3748",
             "borderTop": f"3px solid {color}",
             "borderRadius": "6px",
             "padding": "10px 14px",
@@ -201,13 +193,12 @@ def build_prices_table(rows):
             "borderLeft": f"3px solid {cat_color}",
         })
 
-        # % change: color + background tint
+        # % change: color only, no background tint
         for field, col in [("_d1", "1D %"), ("_d7", "1W %"), ("_d30", "1M %"), ("_ytd", "YTD %")]:
             val = row.get(field)
             style_data_conditional.append({
                 "if": {"row_index": i, "column_id": col},
                 "color": _semaphore_color(val),
-                "backgroundColor": _change_bg(val),
                 "fontWeight": "700" if val is not None and abs(val) >= ALERT_1D_YELLOW else "normal",
             })
 
@@ -215,7 +206,7 @@ def build_prices_table(rows):
         if i % 2 == 0:
             style_data_conditional.append({
                 "if": {"row_index": i},
-                "backgroundColor": "#0d2d50",
+                "backgroundColor": "#1a2535",
             })
 
     return dash_table.DataTable(
@@ -226,25 +217,25 @@ def build_prices_table(rows):
         style_table={
             "overflowX": "auto",
             "overflowY": "auto",
-            "maxHeight": "65vh",
+            "maxHeight": "calc(100vh - 260px)",
             "minWidth": "100%",
-            "borderRadius": "8px",
-            "border": "1px solid #2a2a4a",
+            "borderRadius": "6px",
+            "border": "1px solid #2d3748",
         },
         style_header={
-            "backgroundColor": "#0a1628",
-            "color": "#8899aa",
+            "backgroundColor": "#1a2535",
+            "color": "#64748b",
             "fontWeight": "700",
-            "border": "1px solid #1e2d3d",
+            "border": "1px solid #2d3748",
             "fontSize": "11px",
             "textTransform": "uppercase",
-            "letterSpacing": "0.5px",
+            "letterSpacing": "0.6px",
             "padding": "10px 12px",
         },
         style_cell={
-            "backgroundColor": "#0f3460",
-            "color": "#dde3ea",
-            "border": "1px solid #1a2a3a",
+            "backgroundColor": "#111827",
+            "color": "#cbd5e1",
+            "border": "1px solid #1e293b",
             "fontSize": "13px",
             "padding": "9px 12px",
             "textAlign": "right",
@@ -254,9 +245,9 @@ def build_prices_table(rows):
             {"if": {"column_id": "Nombre"},
              "textAlign": "left", "fontWeight": "600",
              "minWidth": "110px", "width": "110px", "maxWidth": "140px",
-             "color": "#ffffff"},
+             "color": "#f1f5f9"},
             {"if": {"column_id": "Precio USD"},
-             "fontFamily": "monospace", "color": "#e8edf2"},
+             "fontFamily": "monospace", "color": "#e2e8f0"},
         ],
         style_data_conditional=style_data_conditional,
         page_size=50,
@@ -308,7 +299,7 @@ def build_ratio_cards():
             html.Div([
                 html.Span(emoji, style={"fontSize": "14px", "marginRight": "5px"}),
                 html.Span(r["name"], style={
-                    "color": "#8899aa", "fontSize": "11px", "fontWeight": "700",
+                    "color": "#64748b", "fontSize": "11px", "fontWeight": "700",
                     "textTransform": "uppercase", "letterSpacing": "0.5px",
                 }),
             ], style={"marginBottom": "6px"}),
@@ -318,12 +309,12 @@ def build_ratio_cards():
                 "fontFamily": "monospace",
             }),
             html.P(description, style={
-                "color": "#5a6a7a", "fontSize": "11px",
+                "color": "#475569", "fontSize": "11px",
                 "marginBottom": "0", "lineHeight": "1.45",
             }),
         ], style={
-            "backgroundColor": "#16213e",
-            "border": "1px solid #1e2d3d",
+            "backgroundColor": "#1f2937",
+            "border": "1px solid #2d3748",
             "borderRadius": "6px",
             "padding": "12px",
             "flex": "1 1 200px",

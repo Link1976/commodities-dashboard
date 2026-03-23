@@ -46,7 +46,7 @@ layout = html.Div([
         dbc.Alert(
             dcc.Markdown(_INFO, style={"fontSize": "12px", "marginBottom": "0"}),
             color="dark",
-            style={"backgroundColor": "#16213e", "border": "1px solid #2a2a4a",
+            style={"backgroundColor": "#1f2937", "border": "1px solid #2d3748",
                    "padding": "10px 16px", "marginBottom": "12px"},
         )
     )),
@@ -59,20 +59,20 @@ layout = html.Div([
                 options=COMMODITY_OPTIONS,
                 value="crude_oil",
                 clearable=False,
-                style={"backgroundColor": "#16213e", "color": "#000"},
+                style={"backgroundColor": "#1f2937", "color": "#000"},
             ),
             xs=12, md=4, style={"marginBottom": "8px"},
         ),
         dbc.Col(
             html.Div([
                 html.Label("Snapshot histórico:",
-                           style={"color": "#a0a0b0", "fontSize": "12px",
+                           style={"color": "#94a3b8", "fontSize": "12px",
                                   "marginBottom": "4px", "display": "block"}),
                 dcc.Dropdown(
                     id="curve-date-dropdown",
                     placeholder="Hoy (último disponible)",
                     clearable=True,
-                    style={"backgroundColor": "#16213e", "color": "#000"},
+                    style={"backgroundColor": "#1f2937", "color": "#000"},
                 ),
             ]),
             xs=12, md=4, style={"marginBottom": "8px"},
@@ -154,7 +154,7 @@ def build_curve_table(commodity: str, on_date: str = None):
     base_price = data[0]["price"]
 
     header = html.Tr([
-        html.Th(c, style={"color": "#a0a0b0", "fontSize": "11px",
+        html.Th(c, style={"color": "#94a3b8", "fontSize": "11px",
                            "padding": "6px 8px", "whiteSpace": "nowrap"})
         for c in ["Venc.", "Precio", "vs 1er contrato"]
     ])
@@ -166,10 +166,10 @@ def build_curve_table(commodity: str, on_date: str = None):
         diff_color = "#e74c3c" if diff > 0 else "#2ecc71" if diff < 0 else "#888"
         rows.append(html.Tr([
             html.Td(label,
-                    style={"color": "#e0e0e0", "padding": "6px 8px",
+                    style={"color": "#cbd5e1", "padding": "6px 8px",
                            "fontWeight": "600", "fontSize": "13px"}),
             html.Td(f"${d['price']:,.2f}",
-                    style={"color": "#e0e0e0", "padding": "6px 8px", "fontSize": "13px"}),
+                    style={"color": "#cbd5e1", "padding": "6px 8px", "fontSize": "13px"}),
             html.Td(diff_str,
                     style={"color": diff_color, "padding": "6px 8px",
                            "fontWeight": "700", "fontSize": "13px"}),
@@ -178,17 +178,17 @@ def build_curve_table(commodity: str, on_date: str = None):
     return html.Table(
         [html.Thead(header), html.Tbody(rows)],
         style={"width": "100%", "borderCollapse": "collapse",
-               "backgroundColor": "#16213e", "borderRadius": "6px"},
+               "backgroundColor": "#1f2937", "borderRadius": "6px"},
     )
 
 
 def _dark_layout():
     return dict(
-        paper_bgcolor="#1a1a2e",
-        plot_bgcolor="#0f3460",
-        font={"color": "#e0e0e0"},
-        xaxis={"gridcolor": "#2a2a4a", "zerolinecolor": "#2a2a4a"},
-        yaxis={"gridcolor": "#2a2a4a", "zerolinecolor": "#2a2a4a"},
+        paper_bgcolor="#111827",
+        plot_bgcolor="#1f2937",
+        font={"color": "#cbd5e1"},
+        xaxis={"gridcolor": "#2d3748", "zerolinecolor": "#374151"},
+        yaxis={"gridcolor": "#2d3748", "zerolinecolor": "#374151"},
         margin={"t": 60, "b": 40, "l": 60, "r": 20},
     )
 

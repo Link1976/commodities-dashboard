@@ -10,9 +10,12 @@ import time
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+import base64
+
 import dash
 from dash import dcc, html
 import dash_bootstrap_components as dbc
+from flask import Response
 
 from dashboard.layout import build_layout
 
@@ -83,10 +86,34 @@ app = dash.Dash(
     external_stylesheets=[dbc.themes.DARKLY],
     suppress_callback_exceptions=True,
     title="Commodity Pulse",
-    meta_tags=[{"name": "viewport",
-                "content": "width=device-width, initial-scale=1, shrink-to-fit=no"}],
+    meta_tags=[
+        {"name": "viewport",
+         "content": "width=device-width, initial-scale=1, shrink-to-fit=no"},
+        {"name": "apple-mobile-web-app-capable",           "content": "yes"},
+        {"name": "apple-mobile-web-app-status-bar-style",  "content": "black-translucent"},
+        {"name": "apple-mobile-web-app-title",             "content": "Commodity Pulse"},
+        {"name": "theme-color",                            "content": "#111827"},
+    ],
 )
+
+# Inyecta el link al apple-touch-icon en el <head>
+app.index_string = app.index_string.replace(
+    "{%metas%}",
+    '{%metas%}<link rel="apple-touch-icon" href="/apple-touch-icon.png">',
+)
+
 app.layout = build_layout()
+
+
+# ── Sirve el logo como PNG para el icono de iOS ───────────────────────────────
+@app.server.route("/apple-touch-icon.png")
+@app.server.route("/apple-touch-icon-precomposed.png")
+def _apple_icon():
+    from dashboard.logo_data import LOGO_SRC
+    # LOGO_SRC = "data:image/png;base64,<data>"
+    b64 = LOGO_SRC.split(",", 1)[1]
+    img_bytes = base64.b64decode(b64)
+    return Response(img_bytes, mimetype="image/png")
 
 # Import pages so their callbacks are registered
 from dashboard.pages import overview, term_structure, history, cot, news  # noqa: F401

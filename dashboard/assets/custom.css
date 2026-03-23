@@ -41,6 +41,13 @@ body, .container-fluid {
 .dash-spreadsheet-container ::-webkit-scrollbar-track { background: #1a2535; }
 .dash-spreadsheet-container ::-webkit-scrollbar-thumb { background: #2d3748; }
 
+/* ── Sticky header (sin fixed_rows — la tabla se expande al contenido) ───── */
+.dash-spreadsheet-container .dash-header th {
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 20 !important;
+}
+
 /* ── Dropdown (dark mode) ─────────────────────────────────────────────────── */
 .Select-menu-outer { background-color: #1f2937 !important; border-color: #374151 !important; }
 .Select-option { background-color: #1f2937 !important; color: #f1f5f9 !important; }

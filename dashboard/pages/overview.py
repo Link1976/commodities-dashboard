@@ -280,7 +280,6 @@ def build_prices_table(rows):
     return dash_table.DataTable(
         data=[{k: v for k, v in r.items() if not k.startswith("_")} for r in rows],
         columns=[{"name": c, "id": c} for c in visible],
-        fixed_rows={"headers": True},
         fixed_columns={"headers": True, "data": 1},
         style_table={
             "overflowX": "auto",

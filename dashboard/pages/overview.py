@@ -267,8 +267,6 @@ def build_prices_table(rows):
         fixed_columns={"headers": True, "data": 1},
         style_table={
             "overflowX": "auto",
-            "overflowY": "auto",
-            "maxHeight": "calc(100vh - 260px)",
             "minWidth": "100%",
             "borderRadius": "6px",
             "border": "1px solid #2d3748",

@@ -9,3 +9,6 @@ annual.txt
 
 # Local secrets
 .env
+
+# Screenshots live as GitHub release assets — HF Spaces rejects binaries in the tree
+docs/

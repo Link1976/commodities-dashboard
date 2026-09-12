@@ -81,6 +81,19 @@ def _background_fetch():
 threading.Thread(target=_background_fetch, daemon=True, name="bg-fetch").start()
 
 
+# ── Link preview metadata ─────────────────────────────────────────────────────
+OG_URL = "https://occam1976-commodities-dashboard.hf.space/"
+OG_IMAGE = (
+    "https://github.com/Link1976/commodities-dashboard"
+    "/releases/download/v1.0/overview.png"
+)
+OG_DESCRIPTION = (
+    "Spot prices, futures curves and CFTC positioning across energy, precious "
+    "metals, PGMs and industrial metals — in one place, with the context needed "
+    "to read them."
+)
+
+
 app = dash.Dash(
     __name__,
     external_stylesheets=[dbc.themes.DARKLY],
@@ -93,6 +106,24 @@ app = dash.Dash(
         {"name": "apple-mobile-web-app-status-bar-style",  "content": "black-translucent"},
         {"name": "apple-mobile-web-app-title",             "content": "Commodity Pulse"},
         {"name": "theme-color",                            "content": "#111827"},
+
+        # Open Graph / Twitter — controls the preview card when the dashboard
+        # is linked from LinkedIn, Slack or anywhere else that unfurls URLs.
+        # The image is the README screenshot, served from the GitHub release
+        # so no binary has to live in this repository.
+        {"property": "og:type",        "content": "website"},
+        {"property": "og:site_name",   "content": "Commodity Pulse"},
+        {"property": "og:title",       "content": "Commodity Pulse — commodities dashboard"},
+        {"property": "og:description", "content": OG_DESCRIPTION},
+        {"property": "og:url",         "content": OG_URL},
+        {"property": "og:image",       "content": OG_IMAGE},
+        {"property": "og:image:width",  "content": "1440"},
+        {"property": "og:image:height", "content": "900"},
+        {"property": "og:image:alt",   "content": "The Commodity Pulse overview: prices and period moves across energy, metals and PGMs"},
+        {"name": "twitter:card",        "content": "summary_large_image"},
+        {"name": "twitter:title",       "content": "Commodity Pulse — commodities dashboard"},
+        {"name": "twitter:description", "content": OG_DESCRIPTION},
+        {"name": "twitter:image",       "content": OG_IMAGE},
     ],
 )
 

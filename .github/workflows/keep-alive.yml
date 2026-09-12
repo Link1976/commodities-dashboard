@@ -9,7 +9,25 @@ jobs:
   ping:
     runs-on: ubuntu-latest
     steps:
-      - name: Ping HF Space
+      - name: Ping HF Space and check the app actually answers
         run: |
-          curl -fsSL --max-time 60 https://occam1976-commodities-dashboard.hf.space/ -o /dev/null
-          echo "Pinged at $(date -u)"
+          set -euo pipefail
+          url="https://occam1976-commodities-dashboard.hf.space"
+
+          # A Space stuck in "Runtime error" still returns HTTP 200, serving
+          # Hugging Face's own error page, so the status code alone proves
+          # nothing — that is how this Space sat dead for two months while
+          # this job kept reporting success. _dash-layout is served only by
+          # the running Dash app, and only as JSON.
+          if ! body=$(curl -fsSL --max-time 90 "$url/_dash-layout"); then
+            echo "::error::Space unreachable at $url"
+            exit 1
+          fi
+
+          if ! printf '%s' "$body" | jq -e 'type == "object"' > /dev/null 2>&1; then
+            echo "::error::Space answered but the Dash app served no layout — likely a runtime error"
+            printf '%s' "$body" | head -c 300
+            exit 1
+          fi
+
+          echo "Space healthy at $(date -u)"

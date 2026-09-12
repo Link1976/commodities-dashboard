@@ -128,6 +128,7 @@ Two collectors need a free API key, supplied through the environment:
 |---|---|---|
 | `EIA_API_KEY` | US energy inventories | https://www.eia.gov/opendata/ |
 | `NASDAQ_API_KEY` | LME warehouse stocks | https://data.nasdaq.com/sign-up |
+| `DATA_DIR` | where the SQLite database lives; defaults to `./data` | — |
 
 Neither is required to start. If unset, those two collectors skip and log why; prices,
 futures, COT and news are unaffected. Never commit these values — set them in your shell,
@@ -135,9 +136,6 @@ or as Space secrets when deploying.
 
 ## Known limitations
 
-- **Storage is not persistent in the hosted deployment.** The container's database is
-  rebuilt on every restart, which refetches three years of price history and drops the
-  scraped rhodium and LME series, since those have no downloadable archive.
 - **The EIA and LME collectors are scheduled by the host**, so they run locally but not
   inside the container.
 - Illiquid contracts can repeat a stale close for several sessions; the figures are shown

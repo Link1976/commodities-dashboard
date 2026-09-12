@@ -7,10 +7,18 @@ from config import DB_PATH
 
 
 def get_conn():
-    """Return a WAL-mode connection to the database."""
+    """Return a connection to the database, in WAL mode where supported."""
     os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
     conn = sqlite3.connect(DB_PATH)
-    conn.execute("PRAGMA journal_mode=WAL")
+    # WAL needs shared memory, which network-backed mounts — the Space's bucket
+    # volume among them — do not provide. Fall back to the rollback journal
+    # instead of failing to open the database at all.
+    try:
+        mode = conn.execute("PRAGMA journal_mode=WAL").fetchone()[0]
+        if mode.lower() != "wal":
+            conn.execute("PRAGMA journal_mode=DELETE")
+    except sqlite3.OperationalError:
+        conn.execute("PRAGMA journal_mode=DELETE")
     conn.execute("PRAGMA foreign_keys=ON")
     conn.row_factory = sqlite3.Row
     return conn

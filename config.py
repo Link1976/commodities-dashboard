@@ -2,7 +2,10 @@ import os
 
 # ── Paths ─────────────────────────────────────────────────────────────────────
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-DB_PATH  = os.path.join(BASE_DIR, "data", "commodities.db")
+# DATA_DIR points at the mounted bucket on the Space (/data) so the database
+# survives restarts; locally it falls back to ./data inside the project.
+DATA_DIR = os.environ.get("DATA_DIR", os.path.join(BASE_DIR, "data"))
+DB_PATH  = os.path.join(DATA_DIR, "commodities.db")
 LOG_DIR  = os.path.join(BASE_DIR, "logs")
 
 # ── API Keys ──────────────────────────────────────────────────────────────────

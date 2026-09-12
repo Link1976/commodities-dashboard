@@ -1,6 +1,6 @@
 """layout.py — Top-level tab structure and refresh interval."""
 from datetime import datetime
-from dash import dcc, html, Input, Output, callback
+from dash import dcc, html, Input, Output, State, callback, no_update
 import dash_bootstrap_components as dbc
 
 from dashboard.pages.overview       import layout as overview_layout
@@ -9,6 +9,19 @@ from dashboard.pages.history        import layout as history_layout
 from dashboard.pages.cot            import layout as cot_layout
 from dashboard.pages.news           import layout as news_layout
 from dashboard.logo_data            import LOGO_SRC
+
+
+# ── Tab ↔ URL mapping ─────────────────────────────────────────────────────────
+# Each tab gets its own path so a tab can be linked to directly and the
+# browser's back button behaves as people expect.
+TAB_SLUGS = {
+    "tab-overview":       "/",
+    "tab-term-structure": "/futuros",
+    "tab-history":        "/historico",
+    "tab-cot":            "/cot",
+    "tab-news":           "/noticias",
+}
+SLUG_TABS = {slug: tab for tab, slug in TAB_SLUGS.items()}
 
 
 def build_layout():
@@ -72,6 +85,9 @@ def build_layout():
                 ),
             ]),
 
+            # Ruta actual — mantiene pestaña y URL sincronizadas
+            dcc.Location(id="url", refresh=False),
+
             # Store para propagar refresh manual a todos los callbacks
             dcc.Store(id="manual-refresh-ts", data=0),
 
@@ -110,6 +126,28 @@ def build_layout():
             ),
         ],
     )
+
+
+@callback(Output("main-tabs", "active_tab"), Input("url", "pathname"))
+def _tab_from_url(pathname):
+    """Open the tab named by the path; anything unknown falls back to Overview."""
+    return SLUG_TABS.get(pathname or "/", "tab-overview")
+
+
+@callback(
+    Output("url", "pathname"),
+    Input("main-tabs", "active_tab"),
+    State("url", "pathname"),
+    prevent_initial_call=True,
+)
+def _url_from_tab(tab, current):
+    """Mirror the active tab back into the address bar.
+
+    Returning no_update when the path already matches keeps this from bouncing
+    against _tab_from_url.
+    """
+    target = TAB_SLUGS.get(tab, "/")
+    return no_update if target == current else target
 
 
 @callback(Output("tab-content", "children"), Input("main-tabs", "active_tab"))

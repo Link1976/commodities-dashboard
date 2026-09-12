@@ -5,7 +5,7 @@ import dash_bootstrap_components as dbc
 from dash import dcc
 
 from db.queries import (
-    get_latest_prices, get_pct_change, get_ytd_change,
+    get_latest_prices, get_pct_change, get_ytd_change, get_last_session_change,
     get_fx_rate, get_price_on_date, get_52w_range, get_ma,
 )
 from config import RATIOS
@@ -143,7 +143,7 @@ def _get_rows():
             continue
         ticker = p["ticker"]
         close  = p["close"]
-        d1  = get_pct_change(ticker, 1)
+        d1  = get_last_session_change(ticker)
         d7  = get_pct_change(ticker, 7)
         d30 = get_pct_change(ticker, 30)
         ytd = get_ytd_change(ticker)

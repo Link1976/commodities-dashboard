@@ -70,6 +70,29 @@ def get_pct_change(ticker: str, days: int) -> float | None:
     return None
 
 
+def get_last_session_change(ticker: str) -> float | None:
+    """% change between the two most recent closes on record.
+
+    Calendar arithmetic is wrong for a one-session move: on a Saturday, or any
+    morning before that day's fetch has run, "today" and "yesterday" resolve to
+    the same stored row and the change collapses to 0.00%. Comparing the last
+    two dates actually present sidesteps weekends, holidays and stale days.
+    """
+    conn = get_conn()
+    rows = conn.execute("""
+        SELECT close FROM spot_prices
+        WHERE ticker = ? AND close IS NOT NULL
+        ORDER BY date DESC LIMIT 2
+    """, (ticker,)).fetchall()
+    conn.close()
+    if len(rows) < 2:
+        return None
+    current, past = float(rows[0][0]), float(rows[1][0])
+    if past == 0:
+        return None
+    return round((current - past) / past * 100, 2)
+
+
 def get_ytd_change(ticker: str) -> float | None:
     """% change since 31-Dec of last year."""
     dec31 = str(date(date.today().year - 1, 12, 31))

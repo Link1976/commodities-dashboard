@@ -6,8 +6,11 @@ DB_PATH  = os.path.join(BASE_DIR, "data", "commodities.db")
 LOG_DIR  = os.path.join(BASE_DIR, "logs")
 
 # ── API Keys ──────────────────────────────────────────────────────────────────
-EIA_API_KEY    = os.environ.get("EIA_API_KEY", "V8AsbpxexkPQA1K06unOlMoyuNoRlJAYkx1N6g59")
-NASDAQ_API_KEY = os.environ.get("NASDAQ_API_KEY", "Q3qg2RtJp_F6Pfz5dcpH")
+# Provided as environment variables — locally via your shell, and as Space
+# secrets on Hugging Face. Never hardcode credentials here: this repo is public.
+# If unset, the EIA and LME fetchers skip cleanly; the rest of the app works.
+EIA_API_KEY    = os.environ.get("EIA_API_KEY", "")
+NASDAQ_API_KEY = os.environ.get("NASDAQ_API_KEY", "")
 
 # ── Spot + FX tickers (yfinance) ──────────────────────────────────────────────
 TICKERS = {

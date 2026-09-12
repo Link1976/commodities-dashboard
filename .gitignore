@@ -6,3 +6,6 @@ __pycache__/
 .DS_Store
 *.db
 annual.txt
+
+# Local secrets
+.env

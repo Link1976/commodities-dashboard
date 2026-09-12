@@ -36,7 +36,7 @@ def fetch_series(series_id: str, meta: dict, rows: int = 52) -> list[dict]:
     Returns list of {report_date, value} dicts.
     """
     if not EIA_API_KEY:
-        log.error("EIA_API_KEY not set in config.py — skipping")
+        log.error("EIA_API_KEY environment variable not set — skipping")
         return []
 
     url = EIA_BASE.format(series_id=series_id)
@@ -96,7 +96,7 @@ def main(history: bool = False):
 
     if not EIA_API_KEY:
         log.error("EIA_API_KEY is empty. Register at https://www.eia.gov/opendata/register.php")
-        print("ERROR: Set EIA_API_KEY in config.py first.")
+        print("ERROR: Set the EIA_API_KEY environment variable first.")
         return
 
     rows_per_series = 260 if history else 52   # 5 years vs 1 year

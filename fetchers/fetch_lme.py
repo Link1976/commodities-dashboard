@@ -45,7 +45,7 @@ LME_DATASETS = {
 def fetch_metal(metal: str, dataset: str, rows: int = 30) -> list[dict]:
     """Fetch LME warehouse stock for one metal from NASDAQ Data Link."""
     if not NASDAQ_API_KEY:
-        log.error("NASDAQ_API_KEY not set in fetchers/fetch_lme.py")
+        log.error("NASDAQ_API_KEY environment variable not set — skipping")
         return []
 
     url = NASDAQ_BASE.format(dataset=dataset)
@@ -115,7 +115,7 @@ def main(history: bool = False):
 
     if not NASDAQ_API_KEY:
         log.error("NASDAQ_API_KEY is empty. Register at https://data.nasdaq.com/sign-up")
-        print("ERROR: Set NASDAQ_API_KEY in fetchers/fetch_lme.py first.")
+        print("ERROR: Set the NASDAQ_API_KEY environment variable first.")
         return
 
     rows_per_metal = 365 if history else 30

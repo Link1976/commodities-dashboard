@@ -33,6 +33,14 @@ def get_latest_prices() -> list[dict]:
     return rows
 
 
+def get_last_update() -> str | None:
+    """Timestamp (UTC, ISO) of the most recent spot price fetch."""
+    conn = get_conn()
+    row = conn.execute("SELECT MAX(fetched_at) FROM spot_prices").fetchone()
+    conn.close()
+    return row[0] if row else None
+
+
 def get_price_series(ticker: str, days: int = 365) -> list[dict]:
     """OHLCV history for one ticker."""
     since = str(date.today() - timedelta(days=days))

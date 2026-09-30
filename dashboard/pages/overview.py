@@ -1,12 +1,13 @@
 """Tab 1 — Overview: movers strip + spot prices table + ratio cards."""
-from datetime import date
+from datetime import date, datetime, timezone
+from zoneinfo import ZoneInfo
 from dash import html, dash_table, Input, Output, callback
 import dash_bootstrap_components as dbc
 from dash import dcc
 
 from db.queries import (
     get_latest_prices, get_pct_change, get_ytd_change, get_last_session_change,
-    get_fx_rate, get_price_on_date, get_52w_range, get_ma,
+    get_fx_rate, get_price_on_date, get_52w_range, get_ma, get_last_update,
 )
 from config import RATIOS
 
@@ -92,6 +93,10 @@ _LEGEND = html.Div([
 
 layout = html.Div([
     html.Div(id="movers-strip", style={"marginBottom": "12px"}),
+    html.Div(id="last-update", style={
+        "color": "#64748b", "fontSize": "11px",
+        "textAlign": "right", "marginBottom": "4px",
+    }),
     dbc.Row(
         dbc.Col([html.Div(id="prices-table"), _LEGEND], xs=12),
     ),
@@ -382,12 +387,26 @@ def build_ratio_cards():
     })
 
 
+def build_last_update():
+    ts = get_last_update()
+    if not ts:
+        return "Última actualización: sin datos"
+    dt = datetime.fromisoformat(ts).replace(tzinfo=timezone.utc)
+    try:
+        dt = dt.astimezone(ZoneInfo("Europe/Madrid"))
+        tz_label = "hora España"
+    except Exception:
+        tz_label = "UTC"
+    return f"Última actualización: {dt:%d/%m/%Y %H:%M} ({tz_label})"
+
+
 # ── Callback ──────────────────────────────────────────────────────────────────
 
 @callback(
     Output("movers-strip",  "children"),
     Output("prices-table",  "children"),
     Output("ratio-cards",   "children"),
+    Output("last-update",   "children"),
     Input("auto-refresh",   "n_intervals"),
     Input("main-tabs",      "active_tab"),
     Input("manual-refresh-ts", "data"),
@@ -408,4 +427,9 @@ def update_overview(_, active_tab, refresh_ts):
     except Exception as e:
         print(f"[overview] ERROR ratios: {e}")
         ratios = html.P(f"Error ratios: {e}", style={"color": "red"})
-    return movers, table, ratios
+    try:
+        last_update = build_last_update()
+    except Exception as e:
+        print(f"[overview] ERROR last update: {e}")
+        last_update = ""
+    return movers, table, ratios, last_update

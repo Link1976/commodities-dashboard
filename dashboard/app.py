@@ -66,10 +66,10 @@ def _background_fetch():
 
     while True:
         try:
-            from fetchers.fetch_prices import main as fetch_main
+            from fetchers.fetch_prices import main as fetch_main, describe
             from fetchers.fetch_cot import main as fetch_cot
             print("[bg-fetch] fetch programado...")
-            fetch_main()
+            print(f"[bg-fetch] precios: {describe(fetch_main())}")
             fetch_cot()
             print("[bg-fetch] fetch completado")
         except Exception as e:

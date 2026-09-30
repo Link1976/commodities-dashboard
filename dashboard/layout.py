@@ -172,7 +172,15 @@ def render_tab(tab):
     prevent_initial_call=True,
 )
 def manual_refresh(n_clicks):
-    from fetchers.fetch_prices import main as fetch_main
-    fetch_main()
-    ts = datetime.now().strftime("%H:%M:%S")
-    return n_clicks, f"Actualizado {ts}"
+    from fetchers.fetch_prices import main as fetch_main, describe
+    try:
+        from zoneinfo import ZoneInfo
+        ts = datetime.now(ZoneInfo("Europe/Madrid")).strftime("%H:%M")
+    except Exception:
+        ts = datetime.utcnow().strftime("%H:%M UTC")
+    try:
+        msg = describe(fetch_main())
+    except Exception as e:
+        print(f"[refresh] error: {e}")
+        msg = f"Error: {e}"
+    return n_clicks, f"{msg} · {ts}"

@@ -23,6 +23,28 @@ logging.basicConfig(
     format="%(asctime)s %(levelname)s %(message)s",
 )
 log = logging.getLogger(__name__)
+# Also echo to stdout so fetch results show up in the Space's container logs
+# (the log file lives inside the ephemeral container and is never seen).
+_stdout = logging.StreamHandler(sys.stdout)
+_stdout.setFormatter(logging.Formatter("[fetch_prices] %(levelname)s %(message)s"))
+log.addHandler(_stdout)
+log.setLevel(logging.INFO)
+
+
+def _yf_errors() -> dict:
+    """Per-ticker errors yfinance swallowed during the last download."""
+    import yfinance.shared as shared
+    return dict(getattr(shared, "_ERRORS", {}) or {})
+
+
+def _rows_saved_since(started_at: str) -> int:
+    """Read back, on a fresh connection, how many spot rows this run wrote."""
+    conn = get_conn()
+    n = conn.execute(
+        "SELECT COUNT(*) FROM spot_prices WHERE fetched_at >= ?", (started_at,)
+    ).fetchone()[0]
+    conn.close()
+    return n
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
@@ -116,8 +138,14 @@ def upsert_curve(conn, commodity: str, contract_label: str,
 
 # ── Main fetch routines ───────────────────────────────────────────────────────
 
-def fetch_spot_prices():
+def fetch_spot_prices() -> dict:
+    """
+    Download the last days of spot prices and FX. Returns a summary:
+    ok / failed tickers, rows written, rows read back from the DB, and errors.
+    """
     log.info("=== fetch_spot_prices start ===")
+    started_at = datetime.utcnow().isoformat()
+    summary = {"ok": [], "failed": [], "rows": 0, "saved": 0, "errors": {}}
     conn = get_conn()
 
     spot_tickers = [t for t, m in TICKERS.items() if m["category"] != "fx"]
@@ -132,8 +160,10 @@ def fetch_spot_prices():
     except Exception as e:
         log.error(f"yfinance spot download failed: {e}")
         conn.close()
-        return
+        summary["errors"]["download"] = str(e)
+        return summary
 
+    yf_errors = _yf_errors()
     total = 0
     for ticker, meta in TICKERS.items():
         if meta["category"] in ("fx",):
@@ -141,13 +171,21 @@ def fetch_spot_prices():
         try:
             df = data[ticker] if len(spot_tickers) > 1 else data
             n = upsert_spot(conn, ticker, meta, df)
-            total += n
-            log.info(f"  {ticker} ({meta['name']}): {n} rows")
         except Exception as e:
-            log.warning(f"  {ticker}: {e}")
+            n = 0
+            yf_errors.setdefault(ticker, str(e))
+        total += n
+        if n:
+            summary["ok"].append(ticker)
+        else:
+            summary["failed"].append(ticker)
+            log.warning(f"  {ticker}: no data ({yf_errors.get(ticker, 'empty response')})")
 
     conn.commit()
-    log.info(f"Spot prices: {total} rows upserted")
+    summary["rows"] = total
+    summary["errors"].update(yf_errors)
+    log.info(f"Spot prices: {total} rows upserted, "
+             f"{len(summary['ok'])} ok, {len(summary['failed'])} failed")
 
     # FX rates
     try:
@@ -158,7 +196,8 @@ def fetch_spot_prices():
     except Exception as e:
         log.error(f"yfinance FX download failed: {e}")
         conn.close()
-        return
+        summary["saved"] = _rows_saved_since(started_at)
+        return summary
 
     fx_total = 0
     for pair in fx_tickers:
@@ -172,6 +211,15 @@ def fetch_spot_prices():
     conn.commit()
     log.info(f"FX rates: {fx_total} rows upserted")
     conn.close()
+
+    # Confirm the writes actually landed in the database file
+    summary["saved"] = _rows_saved_since(started_at)
+    if summary["saved"] < summary["rows"]:
+        log.error(f"DB write check: wrote {summary['rows']} rows, "
+                  f"read back only {summary['saved']}")
+    else:
+        log.info(f"DB write check: {summary['saved']} rows read back OK")
+    return summary
 
 
 def fetch_futures_curves():
@@ -252,9 +300,29 @@ def fetch_history(days: int = 365):
 
 # ── Entry point ───────────────────────────────────────────────────────────────
 
-def main():
-    fetch_spot_prices()
-    fetch_futures_curves()
+def main() -> dict:
+    summary = fetch_spot_prices()
+    try:
+        fetch_futures_curves()
+    except Exception as e:
+        log.error(f"futures curves failed: {e}")
+    return summary
+
+
+def describe(summary: dict) -> str:
+    """One-line, human-readable outcome of a fetch for the dashboard."""
+    ok, failed = len(summary["ok"]), len(summary["failed"])
+    if not ok:
+        errs = " ".join(summary["errors"].values()).lower()
+        if "rate" in errs or "too many" in errs or "429" in errs:
+            return "Yahoo no devolvió datos (límite de peticiones)"
+        return "Yahoo no devolvió datos"
+    if summary["saved"] < summary["rows"]:
+        return "Descargado pero no guardado en la base de datos"
+    msg = f"{ok} precios actualizados"
+    if failed:
+        msg += f" · {failed} sin datos"
+    return msg
 
 
 if __name__ == "__main__":
